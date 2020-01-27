@@ -2,43 +2,43 @@ from wsgiref.simple_server import make_server
 from tg import MinimalApplicationConfigurator
 from tg import expose, TGController
 
+from metalibm_core.utility.ml_template import precision_parser
 
-FORM_TEMPLATE = """\
-<html>
-	<body>
-		<table>
-		  <tr>
-		  <td width="50%">
-			<form action="function" method="get" >
-				<label>Function Name:</label>
-				<input type="text" name="name" value="name"></input> <br/>
-				<input type="submit" value="Generate!">
-			</form>
-		  </td>
-		  <td width="50%">
-			{code}
-		  </td>
-		</tr>
-	  </table>
-	<body>
-</html>
+import metalibm_functions.ml_exp as ml_exp
 
-"""
+FUNCTION_MAP = {
+    "exp": ml_exp.ML_Exponential
+}
+
+format_list = ["binary32", "binary64"]
+vector_size_list = [1, 2, 4, 8]
+
 
 # RootController of our web app, in charge of serving content for /
 class RootController(TGController):
-    @expose(content_type="text/html")
+    @expose("main.xhtml") #content_type="text/html")
     def index(self):
-        return FORM_TEMPLATE.format(code="")
+        return dict(code="no code generated", format_list=format_list, vector_size_list=vector_size_list)
 
-    @expose()
-    def function(self, name):
-        return FORM_TEMPLATE.format(code=name)
+    @expose("main.xhtml") #content_type="text/html")
+    def function(self, name, io_format, vector_size=1):
+        code = "generated {} for {} with vector_size={}".format(name, io_format, vector_size)
+        if not name in FUNCTION_MAP:
+            source_code = "unknown function {}".format(name)
+        else:
+            fct_ctor = FUNCTION_MAP[name]
+            precision = precision_parser(io_format)
+            vector_size = int(vector_size)
+            args = fct_ctor.get_default_args(precision=precision, vector_size=vector_size)
+            fct_instance = fct_ctor(args=args)
+            source_code = fct_instance.generate_full_source_code()
+        return dict(code=source_code, format_list=format_list, vector_size_list=vector_size_list)
 
 # Configure a new minimal application with our root controller.
 config = MinimalApplicationConfigurator()
 config.update_blueprint({
-    'root_controller': RootController()
+    'root_controller': RootController(),
+    'renderers': ['kajiki']
 })
 
 # Serve the newly configured web application.
