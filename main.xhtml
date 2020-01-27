@@ -1,0 +1,62 @@
+<html>
+    <head>
+    <link rel="stylesheet"
+          href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.0/build/styles/default.min.css"/>
+          <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.0/build/highlight.min.js"></script>
+          <script>hljs.initHighlightingOnLoad();</script>
+    </head>
+	<body>
+		<table>
+		  <tr>
+		  <td width="50%" valign="top">
+			<form action="function" method="get" >
+                <table>
+                    <tr>
+                        <td>
+                            <label>Function Name:</label>
+                        </td>
+                        <td>
+                            <input type="text" name="name" value="name"></input> <br/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>Format:</label>
+                        </td>
+                        <td>
+                            <select name="io_format" id="io_format">
+                                <option py:for="io_format in format_list" value="${io_format}">${io_format}</option>
+                        </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>Vector size:</label>
+                        </td>
+                        <td>
+                            <select name="vector_size" id="vector_size">
+                                <option py:for="vector_size in vector_size_list" value="${vector_size}">${vector_size}</option>
+                        </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="submit" value="Generate!"/>
+                        </td>
+                        <td>
+                        </td>
+                    </tr>
+                </table>
+			</form>
+		  </td>
+		  <td width="50%">
+            <pre>
+                <code class="C" style="overflow-y: scroll;height:500px">
+${code}
+                </code>
+            </pre>
+		  </td>
+		</tr>
+	  </table>
+	</body>
+</html>
