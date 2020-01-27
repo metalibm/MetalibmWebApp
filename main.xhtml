@@ -16,7 +16,15 @@
                             <label>Function Name:</label>
                         </td>
                         <td>
-                            <input type="text" name="name" value="name"></input> <br/>
+                            <select name="name" id="name">
+                                <py:for each="possible_name in function_name_list">
+                                    <py:if test="name == possible_name">
+                                        <option value="${possible_name}" selected="selected">${possible_name}</option>
+                                    </py:if><py:else>
+                                        <option value="${possible_name}">${possible_name}</option>
+                                    </py:else>
+                                </py:for>
+                            </select>
                         </td>
                     </tr>
                     <tr>
@@ -25,7 +33,13 @@
                         </td>
                         <td>
                             <select name="io_format" id="io_format">
-                                <option py:for="io_format in format_list" value="${io_format}">${io_format}</option>
+                                <py:for each="io_format in format_list">
+                                    <py:if test="precision == io_format">
+                                        <option value="${io_format}" selected="selected">${io_format}</option>
+                                    </py:if><py:else>
+                                        <option value="${io_format}">${io_format}</option>
+                                    </py:else>
+                                </py:for>
                         </select>
                         </td>
                     </tr>
@@ -35,7 +49,29 @@
                         </td>
                         <td>
                             <select name="vector_size" id="vector_size">
-                                <option py:for="vector_size in vector_size_list" value="${vector_size}">${vector_size}</option>
+                                <py:for each="possible_vector_size in vector_size_list">
+                                    <py:if test="possible_vector_size == vector_size">
+                                        <option value="${possible_vector_size}" selected="selected">${possible_vector_size}</option>
+                                    </py:if><py:else>
+                                        <option value="${possible_vector_size}">${possible_vector_size}</option>
+                                    </py:else>
+                                </py:for>
+                        </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>Target:</label>
+                        </td>
+                        <td>
+                            <select name="target" id="target">
+                                <py:for each="possible_target in target_list">
+                                    <py:if test="possible_target == target">
+                                        <option value="${possible_target}" selected="selected">${possible_target}</option>
+                                    </py:if><py:else>
+                                        <option value="${possible_target}">${possible_target}</option>
+                                    </py:else>
+                                </py:for>
                         </select>
                         </td>
                     </tr>
