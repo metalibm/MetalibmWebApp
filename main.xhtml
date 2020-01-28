@@ -11,13 +11,14 @@
 		  <style>
 				.board {
 				  position: relative;
+                  width: 100%;
 				  margin-left: 1%;
 				}
 				.board-column {
 				  position: absolute;
 				  left: 0;
 				  right: 0;
-				  width: 30%;
+				  width: 90%;
 				  margin: 0 1.5%;
 				  background: #f0f0f0;
 				  border-radius: 3px;
@@ -99,14 +100,14 @@
 	<body>
 		<table>
 		  <tr>
-		  <td width="50%" valign="top">
+		  <td width="500px" valign="top">
 			<form action="function" method="get" >
                 <table>
                     <tr>
                         <td>
                             <label>Function Name:</label>
                         </td>
-                        <td>
+                        <td width="500px">
                             <select name="name" id="name">
                                 <py:for each="possible_name in function_name_list">
                                     <py:if test="name == possible_name">
@@ -171,22 +172,28 @@
                             <label>PassList:</label>
                         </td>
                         <td>
+			<div class="board">
+			  <div class="board-column todo">
+				<div class="board-column-header">Pass List</div>
+				<div class="board-column-content">
                             <py:for each="pass_index, registered_pass in enumerate(registered_pass_list)">
-                                <select name="pass_${pass_index}" id="target">
+                                <div class="board-item" id="${registered_pass}">
+                                    <div class="board-item-content" id="${registered_pass}">
+                                    ${registered_pass}
+                                </div>
+                            </div>
+                            </py:for>
+				</div>
+			  </div>
+			</div>
+            Add a new pass:
+                                <select name="new_pass" id="new_pass">
                                     <py:for each="possible_pass in available_pass_list">
-                                        <py:if test="possible_pass == registered_pass">
-                                            <option value="${possible_pass}" selected="selected">${possible_pass}</option>
-                                        </py:if><py:else>
                                             <option value="${possible_pass}">${possible_pass}</option>
-                                        </py:else>
                                     </py:for>
                                 </select>
-                                <br/>
-                            </py:for>
-                            <input type="submit" value="Up" formaction=""/>
-                            <input type="submit" value="Down" formaction=""/>
-                            <input type="submit" value="Add" formaction="add_pass"/>
-							<input type="hidden" value="" name="pass_list"/>
+                               <input type="button" value="Add" onclick="add_new_pass()"/> 
+                               <input type="hidden" id="registered_pass_list" name="registered_pass_list" value="${','.join(registered_pass_list)}"/>
                         </td>
                     </tr>
                     <tr>
@@ -199,7 +206,7 @@
                 </table>
 			</form>
 		  </td>
-		  <td width="50%">
+		  <td width="500px">
             <pre>
                 <code class="C" style="overflow-y: scroll;height:500px">
 ${code}
@@ -210,18 +217,13 @@ ${code}
 		<tr>
 			<td colspan="2">
 
-			<div class="board">
-			  <div class="board-column todo">
-				<div class="board-column-header">Pass List</div>
-				<div class="board-column-content">
-				  <div class="board-item" id="item1"><div class="board-item-content"><span>Item #</span>1</div></div>
+		<!--
+                <div class="board-item" id="item1"><div class="board-item-content"><span>Item #</span>1</div></div>
 				  <div class="board-item" id="item2"><div class="board-item-content"><span>Item #</span>2</div></div>
 				  <div class="board-item" id="item3"><div class="board-item-content"><span>Item #</span>3</div></div>
 				  <div class="board-item" id="item4"><div class="board-item-content"><span>Item #</span>4</div></div>
 				  <div class="board-item" id="item5"><div class="board-item-content"><span>Item #</span>5</div></div>
-				</div>
-			  </div>
-			</div>
+        -->
 			</td>
 		</tr>
 	  </table>
@@ -317,5 +319,20 @@ ${code}
 					boardGrid.refreshItems().layout();
 					
 				}
+                function add_new_pass() {
+                    var pass_name = document.getElementById("new_pass").value;
+					var new_item = document.createElement("div");
+					var new_item_content = document.createElement("div");
+					new_item_content.innerHTML = pass_name;
+					new_item_content.setAttribute("class", "board-item-content");
+					new_item.appendChild(new_item_content);
+					new_item.setAttribute("class", "board-item");
+					new_item.setAttribute("id", pass_name);
+					grid.add(new_item);
+					boardGrid.refreshItems().layout();
+                    // update hidden pass list
+                    document.getElementById("registered_pass_list").setAttribute("value", get_item_list());
+
+                }
 			</script>
 </html>

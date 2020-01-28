@@ -5,6 +5,7 @@ from tg import expose, TGController
 from metalibm_core.utility.ml_template import (
     precision_parser, target_parser, target_map
 )
+from metalibm_core.core.passes import Pass
 
 import metalibm_functions.ml_exp as ml_exp
 import metalibm_functions.generic_log as genlog
@@ -18,14 +19,17 @@ FUNCTION_MAP = {
 
 format_list = ["binary32", "binary64"]
 vector_size_list = [1, 2, 4, 8]
+available_pass_list = [tag for tag in Pass.get_pass_tag_list()]
 
 
 option_dict = {
     "format_list": format_list,
     "vector_size_list": vector_size_list,
-    "function_name_list": FUNCTION_MAP.keys(),
-    "target_list": target_map.keys(),
+    "function_name_list": list(FUNCTION_MAP.keys()),
+    "target_list": list(target_map.keys()),
+    "available_pass_list": available_pass_list,
 }
+
 
 
 class MyLogHandler:
@@ -45,12 +49,17 @@ class RootController(TGController):
         return dict(
             code="no code generated",
             precision=format_list[0],
+            registered_pass_list=["check_processor_support"],
+            vector_size=1,
+            target="generic",
             name=option_dict["function_name_list"][0],
             **option_dict)
 
     @expose("main.xhtml") #content_type="text/html")
-    def function(self, name, io_format, vector_size=1, target="generic"):
+    def function(self, name, io_format, vector_size=1, target="generic", registered_pass_list=""):
         code = "generated {} for {} with vector_size={}".format(name, io_format, vector_size)
+        registered_pass_list = registered_pass_list.split(",")
+        print("registered_pass_list={}".format(registered_pass_list))
         if not name in FUNCTION_MAP:
             source_code = "unknown function {}".format(name)
         else:
@@ -62,9 +71,11 @@ class RootController(TGController):
                 vector_size = int(vector_size)
                 target_class = target_parser(target)
                 target_inst = target_class()
+                passes = ["beforecodegen:{}".format(pass_tag) for pass_tag in registered_pass_list]
                 args = fct_ctor.get_default_args(
                     precision=precision,
                     vector_size=vector_size,
+                    passes=passes,
                     target=target_inst)
                 fct_instance = fct_ctor(args=args)
                 source_code = fct_instance.generate_full_source_code()
@@ -76,6 +87,7 @@ class RootController(TGController):
             name=name,
             target=target,
             vector_size=vector_size,
+            registered_pass_list=registered_pass_list,
             **option_dict)
 
 # Configure a new minimal application with our root controller.
