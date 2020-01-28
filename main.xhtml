@@ -177,9 +177,10 @@
 				<div class="board-column-header">Pass List</div>
 				<div class="board-column-content">
                             <py:for each="pass_index, registered_pass in enumerate(registered_pass_list)">
-                                <div class="board-item" id="${registered_pass}">
+                                <div class="board-item" id="pass_${pass_index}-${registered_pass}">
                                     <div class="board-item-content" id="${registered_pass}">
                                     ${registered_pass}
+                                    <!--<a onclick="remove_pass('pass_${pass_index}-${registered_pass}')">Del</a>--> 
                                 </div>
                             </div>
                             </py:for>
@@ -234,6 +235,7 @@ ${code}
 				var boardGrid;
 
 
+                var pass_number = ${len(registered_pass_list)};
 
 
 				// Define the column grids so we can drag those
@@ -264,6 +266,21 @@ ${code}
 					item.getElement().style.width = item.getWidth() + 'px';
 					item.getElement().style.height = item.getHeight() + 'px';
 				  })
+                  .on('dragEnd', function (item) {
+                        console.log(item.getElement().id);
+                        var board_pos = document.getElementsByClassName("board-column")[0].getBoundingClientRect();
+                        console.log(board_pos);
+
+                        var mouse_x = window.event.clientX;
+                        var drag_start_x = item.getElement()._drag_start_x;
+                        console.log(drag_start_x, mouse_x);
+                        var delta = mouse_x - board_pos.x;
+                        console.log(delta);
+                        if (delta - board_pos.width > 200) {
+                            grid.remove(item);
+                            update_registered_pass_list();
+                        }
+                  })
 				  .on('dragReleaseEnd', function (item) {
 					// Let's remove the fixed width/height from the
 					// dragged item now that it is back in a grid
@@ -276,6 +293,7 @@ ${code}
 					// be different size.
 					columnGrids.forEach(function (grid) {
 					  grid.refreshItems();
+                    update_registered_pass_list();
 					});
 				  })
 				  .on('layoutStart', function () {
@@ -303,8 +321,12 @@ ${code}
 				  dragReleaseDuration: 400,
 				  dragReleaseEasing: 'ease'
 				});
+                function remove_pass(pass_id_tag) {
+                    var pass_elt = document.getElementById(pass_id_tag);
+                    grid.remove([pass_elt], {removeElements: true})
+                }
 				function get_item_list() {
-					return grid.getItems().map(item => item.getElement().id);
+					return grid.getItems().map(item => item.getElement().id.split('-')[1]);
 				}
 				function create_new_item() {
 					// var column = document.getElementsByClassName("board-column-content")[0];
@@ -319,19 +341,29 @@ ${code}
 					boardGrid.refreshItems().layout();
 					
 				}
+                function update_registered_pass_list()
+                {
+                    // update hidden pass list
+                    var new_pass_list = get_item_list();
+                    document.getElementById("registered_pass_list").setAttribute("value", new_pass_list);
+                    console.log("updating pass list to: ", new_pass_list);
+                }
+
                 function add_new_pass() {
                     var pass_name = document.getElementById("new_pass").value;
+                    var item_id = pass_number.toString() + "-" + pass_name;
 					var new_item = document.createElement("div");
 					var new_item_content = document.createElement("div");
 					new_item_content.innerHTML = pass_name;
 					new_item_content.setAttribute("class", "board-item-content");
+
 					new_item.appendChild(new_item_content);
 					new_item.setAttribute("class", "board-item");
-					new_item.setAttribute("id", pass_name);
+					new_item.setAttribute("id", item_id);
 					grid.add(new_item);
 					boardGrid.refreshItems().layout();
-                    // update hidden pass list
-                    document.getElementById("registered_pass_list").setAttribute("value", get_item_list());
+
+                    update_registered_pass_list();
 
                 }
 			</script>
