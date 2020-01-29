@@ -84,12 +84,13 @@ class RootController(TGController):
             registered_pass_list=["check_processor_support"],
             vector_size=1,
             sub_vector_size=1,
+            debug=False,
             target="generic",
             name=option_dict["function_name_list"][0],
             **option_dict)
 
     @expose("main.xhtml") #content_type="text/html")
-    def function(self, name, io_format, vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1):
+    def function(self, name, io_format, vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False):
         code = "generated {} for {} with vector_size={}".format(name, io_format, vector_size)
         registered_pass_list = registered_pass_list.split(",")
         print("registered_pass_list={}".format(registered_pass_list))
@@ -103,6 +104,7 @@ class RootController(TGController):
                 precision = precision_parser(io_format)
                 vector_size = int(vector_size)
                 sub_vector_size = int(sub_vector_size)
+                debug = bool(debug)
                 target_class = target_parser(target)
                 target_inst = target_class()
                 passes = ["beforecodegen:{}".format(pass_tag) for pass_tag in registered_pass_list]
@@ -111,6 +113,7 @@ class RootController(TGController):
                     vector_size=vector_size,
                     sub_vector_size=sub_vector_size,
                     passes=passes,
+                    debug=debug,
                     target=target_inst,
                     **fct_extra_args)
                 fct_instance = fct_ctor(args=args)
@@ -123,6 +126,7 @@ class RootController(TGController):
             name=name,
             target=target,
             vector_size=vector_size,
+            debug=debug,
             sub_vector_size=sub_vector_size,
             registered_pass_list=registered_pass_list,
             **option_dict)

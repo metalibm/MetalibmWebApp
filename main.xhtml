@@ -168,6 +168,18 @@
                     </tr>
                     <tr>
                         <td class="option_label_cell">
+                            <label class="option_label">Debug:</label>
+                        </td>
+                        <td>
+                            <py:if test="debug">
+                                <input type="checkbox" name="debug" id="debug" value="True" checked="true"/>
+                            </py:if><py:else>
+                                <input type="checkbox" name="debug" id="debug" value="True"/>
+                            </py:else>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="option_label_cell">
                             <label class="option_label">Vector size:</label>
                         </td>
                         <td>
