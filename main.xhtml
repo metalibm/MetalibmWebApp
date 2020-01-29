@@ -184,6 +184,22 @@
                     </tr>
                     <tr>
                         <td class="option_label_cell">
+                            <label class="option_label">Sub-Vector size:</label>
+                        </td>
+                        <td>
+                            <select name="sub_vector_size" id="sub_vector_size" class="option_select">
+                                <py:for each="possible_sub_vector_size in sub_vector_size_list">
+                                    <py:if test="possible_sub_vector_size == sub_vector_size">
+                                        <option value="${possible_sub_vector_size}" selected="selected">${possible_sub_vector_size}</option>
+                                    </py:if><py:else>
+                                        <option value="${possible_sub_vector_size}">${possible_sub_vector_size}</option>
+                                    </py:else>
+                                </py:for>
+                        </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="option_label_cell">
                             <label class="option_label">Target:</label>
                         </td>
                         <td>
