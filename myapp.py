@@ -6,6 +6,9 @@ from metalibm_core.utility.ml_template import (
     precision_parser, target_parser, target_map
 )
 from metalibm_core.core.passes import Pass
+from metalibm_core.code_generation.code_constant import (
+    C_Code, LLVM_IR_Code, OpenCL_Code
+)
 
 
 import metalibm_core.utility.log_report as ml_log_report
@@ -44,7 +47,12 @@ FUNCTION_MAP = {
     "tanh": (metalibm_functions.ml_tanh.ML_HyperbolicTangent, {}),
     "cosh": (metalibm_functions.ml_cosh.ML_HyperbolicCosine, {}),
     "sinh": (metalibm_functions.ml_sinh.ML_HyperbolicSine, {}),
+}
 
+LANGUAGE_MAP = {
+    "c": C_Code,
+    "ll-ir": LLVM_IR_Code,
+    "opencl-c": OpenCL_Code
 }
 
 format_list = ["binary32", "binary64"]
@@ -60,6 +68,7 @@ option_dict = {
     "function_name_list": list(FUNCTION_MAP.keys()),
     "target_list": list(target_map.keys()),
     "available_pass_list": available_pass_list,
+    "language_list": list(LANGUAGE_MAP.keys()),
 }
 
 
@@ -86,11 +95,12 @@ class RootController(TGController):
             sub_vector_size=1,
             debug=False,
             target="generic",
+            language="c",
             name=option_dict["function_name_list"][0],
             **option_dict)
 
     @expose("main.xhtml") #content_type="text/html")
-    def function(self, name, io_format, vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False):
+    def function(self, name, io_format, vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c"):
         code = "generated {} for {} with vector_size={}".format(name, io_format, vector_size)
         registered_pass_list = registered_pass_list.split(",")
         print("registered_pass_list={}".format(registered_pass_list))
@@ -101,6 +111,7 @@ class RootController(TGController):
             ml_log_report.Log.log_stream.log_output = ""
             try:
                 fct_ctor, fct_extra_args = FUNCTION_MAP[name]
+                language_object = LANGUAGE_MAP[language]
                 precision = precision_parser(io_format)
                 vector_size = int(vector_size)
                 sub_vector_size = int(sub_vector_size)
@@ -113,6 +124,7 @@ class RootController(TGController):
                     vector_size=vector_size,
                     sub_vector_size=sub_vector_size,
                     passes=passes,
+                    language=language_object,
                     debug=debug,
                     target=target_inst,
                     **fct_extra_args)
@@ -127,6 +139,7 @@ class RootController(TGController):
             target=target,
             vector_size=vector_size,
             debug=debug,
+            language=language,
             sub_vector_size=sub_vector_size,
             registered_pass_list=registered_pass_list,
             **option_dict)

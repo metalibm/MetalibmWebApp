@@ -227,6 +227,22 @@
                         </td>
                     </tr>
                     <tr>
+                        <td class="option_label_cell">
+                            <label class="option_label">Language:</label>
+                        </td>
+                        <td>
+                            <select name="language" id="language" class="option_select">
+                                <py:for each="possible_language in language_list">
+                                    <py:if test="possible_language == language">
+                                        <option value="${possible_language}" selected="selected">${possible_language}</option>
+                                    </py:if><py:else>
+                                        <option value="${possible_language}">${possible_language}</option>
+                                    </py:else>
+                                </py:for>
+                        </select>
+                        </td>
+                    </tr>
+                    <tr>
                         <td valign="top" class="option_label_cell">
                             <label class="option_label">Pass List:</label>
                         </td>
@@ -288,6 +304,11 @@ ${code}
                 </code>
             </pre>
 		  </td>
+		</tr>
+		<tr>
+			<td colspan="2">
+                Example links
+			</td>
 		</tr>
 		<tr>
 			<td colspan="2">
