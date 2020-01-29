@@ -7,14 +7,44 @@ from metalibm_core.utility.ml_template import (
 )
 from metalibm_core.core.passes import Pass
 
-import metalibm_functions.ml_exp as ml_exp
-import metalibm_functions.generic_log as genlog
 
 import metalibm_core.utility.log_report as ml_log_report
 
+import metalibm_functions.ml_exp
+import metalibm_functions.ml_expm1
+import metalibm_functions.ml_exp2
+import metalibm_functions.ml_cbrt
+import metalibm_functions.ml_sqrt
+import metalibm_functions.ml_isqrt
+import metalibm_functions.ml_vectorizable_log
+import metalibm_functions.ml_cosh
+import metalibm_functions.ml_sinh
+import metalibm_functions.ml_sincos
+import metalibm_functions.ml_atan
+import metalibm_functions.external_bench
+import metalibm_functions.ml_tanh
+import metalibm_functions.ml_div
+import metalibm_functions.generic_log
+import metalibm_functions.erf
+import metalibm_functions.ml_tanh
+import metalibm_functions.ml_cosh
+import metalibm_functions.ml_sinh
+
 FUNCTION_MAP = {
-    "exp": ml_exp.ML_Exponential,
-    "log": genlog.ML_GenericLog
+    "exp": (metalibm_functions.ml_exp.ML_Exponential, {}),
+    "exp2": (metalibm_functions.ml_exp2.ML_Exp2, {}),
+    "cbrt": (metalibm_functions.ml_cbrt.ML_Cbrt, {}),
+    "sqrt": (metalibm_functions.ml_sqrt.MetalibmSqrt, {}),
+    "log": (metalibm_functions.generic_log.ML_GenericLog, {}),
+    "log2": (metalibm_functions.generic_log.ML_GenericLog, {"basis": 2}),
+    "log10": (metalibm_functions.generic_log.ML_GenericLog, {"basis": 10}),
+    "cos": (metalibm_functions.ml_sincos.ML_SinCos, {"sin_output": False}),
+    "sin": (metalibm_functions.ml_sincos.ML_SinCos, {"sin_output": True}),
+    "erf": (metalibm_functions.erf.ML_Erf, {}),
+    "tanh": (metalibm_functions.ml_tanh.ML_HyperbolicTangent, {}),
+    "cosh": (metalibm_functions.ml_cosh.ML_HyperbolicCosine, {}),
+    "sinh": (metalibm_functions.ml_sinh.ML_HyperbolicSine, {}),
+
 }
 
 format_list = ["binary32", "binary64"]
@@ -66,7 +96,7 @@ class RootController(TGController):
             # clearing logs
             ml_log_report.Log.log_stream.log_output = ""
             try:
-                fct_ctor = FUNCTION_MAP[name]
+                fct_ctor, fct_extra_args = FUNCTION_MAP[name]
                 precision = precision_parser(io_format)
                 vector_size = int(vector_size)
                 target_class = target_parser(target)
@@ -76,7 +106,8 @@ class RootController(TGController):
                     precision=precision,
                     vector_size=vector_size,
                     passes=passes,
-                    target=target_inst)
+                    target=target_inst,
+                    **fct_extra_args)
                 fct_instance = fct_ctor(args=args)
                 source_code = fct_instance.generate_full_source_code()
             except Exception as e:
