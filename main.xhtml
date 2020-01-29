@@ -33,8 +33,8 @@
 				}
 				.board-column-header {
 				  position: relative;
-				  height: 50px;
-				  line-height: 50px;
+				  height: 35px;
+				  line-height: 35px;
 				  overflow: hidden;
 				  padding: 0 20px;
 				  text-align: center;
@@ -78,7 +78,7 @@
 				}
 				.board-item-content {
 				  position: relative;
-				  padding: 20px;
+				  padding: 10px;
 				  background: #fff;
 				  border-radius: 4px;
 				  font-size: 17px;
@@ -95,21 +95,51 @@
 				  }
 				}
 
+                .option_select {
+                    width: 250px;
+                }
+                .option_label {
+                    font-weight: bold;
+                }
+                .option_label_cell {
+                    text-align: right;
+                }
+
 		  </style>
     </head>
 	<body>
+        <center>
 		<table>
+          <tr>
+                <td colspan="2">
+                    <p>
+                        This web application is based on the tools <b>metalibm</b>, available on <a href="https://github.com/kalray/metalibm"> Kalray's github page </a>
+                    </p>
+                    <p> <b>Metalibm</b> is a code generator for elementary functions.
+                    </p>
+                    <p>
+                        You can report issue with the web application <a href="">there (soon)</a> and with metalibm <a href="https://github.com/kalray/metalibm/issues/new"> here </a>.
+                    </p>
+                </td>
+          </tr>
+          <tr>
+              <td>
+                  <b>Generation options:</b><br/>
+              </td>
+              <td>
+                  <b>Generated code result:</b><br/>
+              </td>
+          </tr>
 		  <tr>
 		  <td width="500px" valign="top">
 			<form action="function" method="get" >
-                <a href="http://localhost:8080"> Main page </a>
                 <table>
                     <tr>
-                        <td>
-                            <label>Function Name:</label>
+                        <td width="150px" class="option_label_cell">
+                            <label class="option_label">Function Name:</label>
                         </td>
-                        <td width="500px">
-                            <select name="name" id="name">
+                        <td width="350px">
+                            <select name="name" id="name" class="option_select">
                                 <py:for each="possible_name in function_name_list">
                                     <py:if test="name == possible_name">
                                         <option value="${possible_name}" selected="selected">${possible_name}</option>
@@ -121,11 +151,11 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>
-                            <label>Format:</label>
+                        <td class="option_label_cell">
+                            <label class="option_label">Format:</label>
                         </td>
                         <td>
-                            <select name="io_format" id="io_format">
+                            <select name="io_format" id="io_format" class="option_select">
                                 <py:for each="io_format in format_list">
                                     <py:if test="precision == io_format">
                                         <option value="${io_format}" selected="selected">${io_format}</option>
@@ -137,11 +167,11 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>
-                            <label>Vector size:</label>
+                        <td class="option_label_cell">
+                            <label class="option_label">Vector size:</label>
                         </td>
                         <td>
-                            <select name="vector_size" id="vector_size">
+                            <select name="vector_size" id="vector_size" class="option_select">
                                 <py:for each="possible_vector_size in vector_size_list">
                                     <py:if test="possible_vector_size == vector_size">
                                         <option value="${possible_vector_size}" selected="selected">${possible_vector_size}</option>
@@ -153,11 +183,11 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>
-                            <label>Target:</label>
+                        <td class="option_label_cell">
+                            <label class="option_label">Target:</label>
                         </td>
                         <td>
-                            <select name="target" id="target">
+                            <select name="target" id="target" class="option_select">
                                 <py:for each="possible_target in target_list">
                                     <py:if test="possible_target == target">
                                         <option value="${possible_target}" selected="selected">${possible_target}</option>
@@ -169,8 +199,8 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>
-                            <label>PassList:</label>
+                        <td valign="top" class="option_label_cell">
+                            <label class="option_label">Pass List:</label>
                         </td>
                         <td>
 			<div class="board">
@@ -188,8 +218,14 @@
 				</div>
 			  </div>
 			</div>
-            Add a new pass:
-                                <select name="new_pass" id="new_pass">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="option_label_cell">
+                            <label class="option_label">Add a new pass:</label>
+                        </td>
+                        <td>
+                                <select name="new_pass" id="new_pass" class="option_select">
                                     <py:for each="possible_pass in available_pass_list">
                                             <option value="${possible_pass}">${possible_pass}</option>
                                     </py:for>
@@ -200,11 +236,20 @@
                     </tr>
                     <tr>
                         <td>
-                            <input type="submit" value="Generate!"/>
+                            <div style="text-align:center;">
+                                <input type="submit" value="Generate!"/>
+                            </div>
                         </td>
                         <td>
                         </td>
                     </tr>
+          <tr>
+                <td colspan="2">
+                    <center>
+                <a href="http://localhost:8080"> Main page </a>
+                    </center>
+                </td>
+          </tr>
                 </table>
 			</form>
 		  </td>
@@ -218,17 +263,11 @@ ${code}
 		</tr>
 		<tr>
 			<td colspan="2">
-
-		<!--
-                <div class="board-item" id="item1"><div class="board-item-content"><span>Item #</span>1</div></div>
-				  <div class="board-item" id="item2"><div class="board-item-content"><span>Item #</span>2</div></div>
-				  <div class="board-item" id="item3"><div class="board-item-content"><span>Item #</span>3</div></div>
-				  <div class="board-item" id="item4"><div class="board-item-content"><span>Item #</span>4</div></div>
-				  <div class="board-item" id="item5"><div class="board-item-content"><span>Item #</span>5</div></div>
-        -->
+                <p> This page is propulsed by <a href="https://turbogears.org/">TurboGears</a> and uses <a href="https://github.com/nandoflorestan/kajiki">kajiki</a> template, <a href="https://haltu.github.io/muuri/">muuri</a> and <a href="https://highlightjs.org/">highlightjs </a></p> 
 			</td>
 		</tr>
 	  </table>
+      </center>
 	</body>
           <script>
 				var itemContainers = [].slice.call(document.querySelectorAll('.board-column-content'));
