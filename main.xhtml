@@ -296,10 +296,15 @@
             <py:if test="error is None">
               <td width="500px">
                 <pre>
-                    <code class="C" style="overflow-y: scroll;height:500px">
+                    <code class="C" style="overflow-y: scroll;height:500px" id="rawSourceCode">
 ${code}
                     </code>
                 </pre>
+                    <!-- The button used to copy the text -->
+					<input type="hidden" id="sourceCode" value="${code}"/>
+                    <center>
+                        <button onclick="copyCodeToClipboard()">Copy source code to clipboard</button>
+                    </center>
               </td>
             </py:if><py:else>
                 <td>
@@ -471,7 +476,28 @@ ${code}
 					boardGrid.refreshItems().layout();
 
                     update_registered_pass_list();
-
                 }
+
+function copyCodeToClipboard() {
+	var copyText = document.getElementById("sourceCode");
+	updateClipboard(copyText.value)
+	//navigator.permissions.query({name: "clipboard-write"}).then(result => { 
+	//  if (result.state == "granted" || result.state == "prompt") {
+	//	/* write to the clipboard now */
+	//	navigator.clipboard.writeText(copyText.value)
+	//  }
+	//});
+}
+
+/** Copying data to clipboard */
+function updateClipboard(newClip) {
+    navigator.clipboard.writeText(newClip).then(function() {
+        /* clipboard successfully set */
+    }, function() {
+        /* clipboard write failed */
+        alert("copy in clipboard failed");
+    });
+}
+
 			</script>
 </html>
