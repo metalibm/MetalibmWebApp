@@ -282,17 +282,13 @@
                         <td>
                             <div style="text-align:center;">
                                 <input type="submit" value="Generate!"/>
+                                <input type="button" value="Clear!"  onclick="window.location.href = 'http://${localhost}';"/>
                             </div>
                         </td>
                         <td>
                         </td>
                     </tr>
           <tr>
-                <td colspan="2">
-                    <center>
-                <a href="http://localhost:8080"> Main page </a>
-                    </center>
-                </td>
           </tr>
                 </table>
 			</form>
@@ -317,8 +313,14 @@ ${code}
             </py:else>
 		</tr>
 		<tr>
-			<td colspan="2">
-                Example links:
+			<td colspan="2" width="1000px">
+                <b><u>Help:</u></b>
+
+                <p> <b>Function name</b> is the name of the elementary function to generate</p>
+
+                <p> <b>Pass list</b> is the list of optimization pass executed on the intermediate representation. Select a new pass in the <b> Add a new pass</b> menu and click "Add" to insert it at the end of the optimization pipeline. You can re-order passes by dragging and dropping them. You can delete a pass by dragging it and dropping outside of the pass list box. 
+                </p>
+                <b><u>Some examples:</u></b>
                 <ul>
                     <py:for each="example_tag in example_map">
                             <li><a href="${example_map[example_tag]}">${example_tag}</a></li>
@@ -328,7 +330,7 @@ ${code}
 		</tr>
 		<tr>
 			<td colspan="2">
-                <p> This page is propulsed by <a href="https://turbogears.org/">TurboGears</a> and uses <a href="https://github.com/nandoflorestan/kajiki">kajiki</a> template, <a href="https://haltu.github.io/muuri/">muuri</a> and <a href="https://highlightjs.org/">highlightjs </a></p> 
+                <p> <i> This page is propulsed by <a href="https://turbogears.org/">TurboGears</a> and uses <a href="https://github.com/nandoflorestan/kajiki">kajiki</a> template, <a href="https://haltu.github.io/muuri/">muuri</a> and <a href="https://highlightjs.org/">highlightjs </a> </i></p> 
 			</td>
 		</tr>
 	  </table>
