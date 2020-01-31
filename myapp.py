@@ -72,8 +72,8 @@ class MetalibmWebApp:
 
     # dictionnary tag -> url of application examples
     EXAMPLE_MAP = {
-        "generic LLVM-IR": "http://{localhost}/function?name=exp&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir&new_pass=rtl_legalize&registered_pass_list=gen_basic_block%2Cbasic_block_simplification%2Cssa_translation",
-        "AVX2 fp32 4-way exponential": "http://{localhost}/function?name=exp&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&new_pass=silence_fp_ops&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion",
+        "generic LLVM-IR": "{localhost}/function?name=exp&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir&new_pass=rtl_legalize&registered_pass_list=gen_basic_block%2Cbasic_block_simplification%2Cssa_translation",
+        "AVX2 fp32 4-way exponential": "{localhost}/function?name=exp&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&new_pass=silence_fp_ops&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion",
     }
 
     ALLOWED_PASS_LIST = [
