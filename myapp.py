@@ -1,6 +1,7 @@
 import sys
 import traceback
 import argparse
+import os
 
 
 from wsgiref.simple_server import make_server
@@ -39,6 +40,9 @@ import metalibm_functions.ml_cosh
 import metalibm_functions.ml_sinh
 
 class MetalibmWebApp:
+    SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+    TEMPLATE = os.path.join(SCRIPT_DIR, "main.xhtml")
+
     FUNCTION_MAP = {
         "exp": (metalibm_functions.ml_exp.ML_Exponential, {}),
         "exp2": (metalibm_functions.ml_exp2.ML_Exp2, {}),
@@ -150,7 +154,7 @@ class RootController(TGController):
         super().__init__()
         self.mwa = MetalibmWebApp(localhost)
 
-    @expose("main.xhtml")
+    @expose(MetalibmWebApp.TEMPLATE)
     def index(self):
         return dict(
             code="no code generated",
@@ -165,7 +169,7 @@ class RootController(TGController):
             error=None,
             **self.mwa.option_dict)
 
-    @expose("main.xhtml")
+    @expose(MetalibmWebApp.TEMPLATE)
     def function(self, name, io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c"):
         code = "generated {} for {} with vector_size={}".format(name, io_format, vector_size)
         registered_pass_list = registered_pass_list.split(",")
