@@ -113,12 +113,12 @@
           <tr>
                 <td colspan="2">
                     <p>
-                        This web application is based on the tools <b>metalibm</b>, available on <a href="https://github.com/kalray/metalibm"> Kalray's github page </a>
+                        This web application is based on the tools <b>metalibm-lugdunum</b>, available on <a href="https://github.com/kalray/metalibm"> Kalray's github page </a>
                     </p>
-                    <p> <b>Metalibm</b> is a code generator for elementary functions.
+                    <p> <b>Metalibm-lugdunum</b> is a code generator for elementary functions. It is part of a larger project <a href="http://metalibm.org"> metalibm.org</a>.
                     </p>
                     <p>
-                        You can report issue with the web application <a href="">there (soon)</a> and with metalibm <a href="https://github.com/kalray/metalibm/issues/new"> here </a>.
+                        You can report issue with the web application <a href="https://github.com/metalibm/MetalibmWepApp/issues/new">there</a> and with metalibm <a href="https://github.com/kalray/metalibm/issues/new"> here </a>.
                     </p>
                 </td>
           </tr>
@@ -297,13 +297,24 @@
                 </table>
 			</form>
 		  </td>
-		  <td width="500px">
-            <pre>
-                <code class="C" style="overflow-y: scroll;height:500px">
+            <py:if test="error is None">
+              <td width="500px">
+                <pre>
+                    <code class="C" style="overflow-y: scroll;height:500px">
 ${code}
-                </code>
-            </pre>
-		  </td>
+                    </code>
+                </pre>
+              </td>
+            </py:if><py:else>
+                <td>
+                    <div>
+                        Error encountered:
+                        ${error}$ 
+                    </div>
+                    <a href="${report_issue_url}"> Click here to report an issue </a>
+                </td>
+
+            </py:else>
 		</tr>
 		<tr>
 			<td colspan="2">

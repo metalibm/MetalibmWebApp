@@ -1,3 +1,7 @@
+import sys
+import traceback
+
+
 from wsgiref.simple_server import make_server
 from tg import MinimalApplicationConfigurator
 from tg import expose, TGController
@@ -90,6 +94,12 @@ class MyLogHandler:
     def write(self, msg):
         self.log_output += msg
 
+def gen_report_issue_url(url="https://github.com/kalray/metalibm/issues/new", **kw):
+    """ Generated an url to automatically report an error in metalibm
+        encountered from the metalibm web app """
+    title="issue with {} reported from MWA".format(kw["name"])
+    return "{}?title={}&body={}".format(url, title, ", ".join("{}={}".format(k, v) for k, v in kw.items()))
+
 # installing custom log handler for metalibm
 ml_log_report.Log.exit_on_error = False
 ml_log_report.Log.log_stream = MyLogHandler()
@@ -108,6 +118,7 @@ class RootController(TGController):
             target="generic",
             language="c",
             name=option_dict["function_name_list"][0],
+            error=None,
             **option_dict)
 
     @expose("main.xhtml") #content_type="text/html")
@@ -115,6 +126,8 @@ class RootController(TGController):
         code = "generated {} for {} with vector_size={}".format(name, io_format, vector_size)
         registered_pass_list = registered_pass_list.split(",")
         print("registered_pass_list={}".format(registered_pass_list))
+        report_issue_url = "https://github.com/metalibm/MetalibmWepApp/issues/new"
+        error = None
         if not name in FUNCTION_MAP:
             source_code = "unknown function {}".format(name)
         else:
@@ -141,8 +154,20 @@ class RootController(TGController):
                     **fct_extra_args)
                 fct_instance = fct_ctor(args=args)
                 source_code = fct_instance.generate_full_source_code()
-            except Exception as e:
-                source_code = "Error encountered:\n{}\n\n{}".format(e, ml_log_report.Log.log_stream.log_output)
+            except:
+                e = sys.exc_info()
+                error = "Exception: {}".format("".join(traceback.format_exception(*e)))
+                source_code = ""
+                report_issue_url = gen_report_issue_url("https://github.com/kalray/metalibm/issues/new",
+                    precision=io_format,
+                    name=name,
+                    target=target,
+                    vector_size=vector_size,
+                    debug=debug,
+                    language=language,
+                    sub_vector_size=sub_vector_size,
+                    registered_pass_list=registered_pass_list,
+                )
         return dict(
             code=source_code,
             precision=io_format,
@@ -153,6 +178,8 @@ class RootController(TGController):
             language=language,
             sub_vector_size=sub_vector_size,
             registered_pass_list=registered_pass_list,
+            report_issue_url=report_issue_url,
+            error=error,
             **option_dict)
 
 # Configure a new minimal application with our root controller.
