@@ -61,6 +61,16 @@ sub_vector_size_list = [1, 2, 4, 8]
 available_pass_list = [tag for tag in Pass.get_pass_tag_list()]
 
 
+# dictionnary tag -> url of application examples
+EXAMPLE_MAP = {
+    "generic LLVM-IR": "http://{localhost}/function?name=exp&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir&new_pass=rtl_legalize&registered_pass_list=gen_basic_block%2Cbasic_block_simplification%2Cssa_translation"
+}
+
+def encode_url(url, localhost="localhost:8080"):
+    encoded_url = url.format(localhost=localhost)
+    print(encoded_url)
+    return encoded_url
+
 option_dict = {
     "format_list": format_list,
     "vector_size_list": vector_size_list,
@@ -69,6 +79,7 @@ option_dict = {
     "target_list": list(target_map.keys()),
     "available_pass_list": available_pass_list,
     "language_list": list(LANGUAGE_MAP.keys()),
+    "example_map": {k: encode_url(v) for k, v in EXAMPLE_MAP.items()},
 }
 
 
@@ -100,7 +111,7 @@ class RootController(TGController):
             **option_dict)
 
     @expose("main.xhtml") #content_type="text/html")
-    def function(self, name, io_format, vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c"):
+    def function(self, name, io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c"):
         code = "generated {} for {} with vector_size={}".format(name, io_format, vector_size)
         registered_pass_list = registered_pass_list.split(",")
         print("registered_pass_list={}".format(registered_pass_list))

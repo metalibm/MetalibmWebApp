@@ -307,7 +307,12 @@ ${code}
 		</tr>
 		<tr>
 			<td colspan="2">
-                Example links
+                Example links:
+                <ul>
+                    <py:for each="example_tag in example_map">
+                            <li><a href="${example_map[example_tag]}">${example_tag}</a></li>
+                    </py:for>
+                </ul>
 			</td>
 		</tr>
 		<tr>
