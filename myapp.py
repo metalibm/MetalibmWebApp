@@ -192,7 +192,7 @@ class RootController(TGController):
         super().__init__()
         self.mwa = MetalibmWebApp(localhost)
 
-    @expose(MetalibmWebApp.TEMPLATE)
+    @expose(MetalibmWebApp.TEMPLATE, content_type="text/html")
     def index(self):
         return dict(
             code="no code generated",
@@ -208,7 +208,7 @@ class RootController(TGController):
             **self.mwa.option_dict)
 
 
-    @expose(MetalibmWebApp.TEMPLATE)
+    @expose(MetalibmWebApp.TEMPLATE, content_type="text/html")
     def function(self, name, io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c"):
 
         input_url = "{localhost}/function?name={name}&io_format={io_format}&vector_size={vector_size}&target={target}&registered_pass_list={registered_pass_list}&debug={debug}&language={language}".format(
