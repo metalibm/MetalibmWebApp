@@ -19,6 +19,11 @@ from metalibm_core.code_generation.code_constant import (
 
 
 import metalibm_core.utility.log_report as ml_log_report
+import metalibm_core.code_generation.code_configuration as ml_code_configuration
+from metalibm_core.code_generation.code_utility import insert_line_break
+import metalibm_core.utility.version_info as ml_version_info
+
+import metalibm_core.utility.log_report as ml_log_report
 
 import metalibm_functions.ml_exp
 import metalibm_functions.ml_expm1
@@ -40,6 +45,34 @@ import metalibm_functions.ml_tanh
 import metalibm_functions.ml_cosh
 import metalibm_functions.ml_sinh
 import metalibm_functions.ml_div
+
+
+GIT_COMMENT_TEMPLATE = """\
+generated using Metalibm Web App ({localhost})
+based on metalibm {version_num}
+sha1 git: {sha1}({sha1_status})
+"""
+
+
+
+
+def custom_get_common_git_comment(localhost, url_getter):
+    def func():
+        git_comment = GIT_COMMENT_TEMPLATE.format(
+            localhost=localhost, version_num=ml_version_info.VERSION_NUM,
+            sha1=str(ml_version_info.GIT_SHA),
+            sha1_status="clean" if ml_version_info.GIT_STATUS else "dirty")
+        if not ml_version_info.GIT_STATUS:
+            git_comment += "\nWARNING: git status was not clean when file was generated !\n\n"
+            ml_log_report.Log.report(ml_log_report.Log.Warning, "git status was not clean when file was generated !")
+        else:
+            git_comment += "\nINFO: git status was clean when file was generated.\n\n"
+        git_comment += "command used for generation:\n  %s\n" % insert_line_break(url_getter(), break_len=70, sep="&", allow_init_break=False, break_char="&\\\n    ")
+
+        return git_comment
+    return func
+
+
 
 class MetalibmWebApp:
     SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -173,8 +206,19 @@ class RootController(TGController):
             error=None,
             **self.mwa.option_dict)
 
+
     @expose(MetalibmWebApp.TEMPLATE)
     def function(self, name, io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c"):
+
+        input_url = "{localhost}/function?name={name}&io_format={io_format}&vector_size={vector_size}&target={target}&registered_pass_list={registered_pass_list}&debug={debug}&language={language}".format(
+            localhost=self.mwa.LOCALHOST,
+            name=name, io_format=io_format,
+            vector_size=vector_size, target=target,
+            registered_pass_list=registered_pass_list,
+            sub_vector_size=sub_vector_size, debug=debug,
+            language=language)
+        ml_code_configuration.GLOBAL_GET_GIT_COMMENT = custom_get_common_git_comment(self.mwa.LOCALHOST, lambda : input_url)
+
         code = "generated {} for {} with vector_size={}".format(name, io_format, vector_size)
         registered_pass_list = registered_pass_list.split(",")
         print("registered_pass_list={}".format(registered_pass_list))
