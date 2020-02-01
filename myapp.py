@@ -39,6 +39,7 @@ import metalibm_functions.erf
 import metalibm_functions.ml_tanh
 import metalibm_functions.ml_cosh
 import metalibm_functions.ml_sinh
+import metalibm_functions.ml_div
 
 class MetalibmWebApp:
     SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -48,6 +49,7 @@ class MetalibmWebApp:
         "exp": (metalibm_functions.ml_exp.ML_Exponential, {}),
         "exp2": (metalibm_functions.ml_exp2.ML_Exp2, {}),
         "cbrt": (metalibm_functions.ml_cbrt.ML_Cbrt, {}),
+        "div":  (metalibm_functions.ml_div.ML_Division, {}),
         "sqrt": (metalibm_functions.ml_sqrt.MetalibmSqrt, {}),
         "log": (metalibm_functions.generic_log.ML_GenericLog, {}),
         "log2": (metalibm_functions.generic_log.ML_GenericLog, {"basis": 2}),
