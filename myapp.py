@@ -208,7 +208,7 @@ class RootController(TGController):
                 source_code = fct_instance.generate_full_source_code()
             except:
                 e = sys.exc_info()
-                error = "Exception: {}".format("".join(traceback.format_exception(*e)))
+                error = "Output: \n{}\nException:\n {}".format(ml_log_report.Log.log_stream.log_output, "".join(traceback.format_exception(*e)))
                 source_code = ""
                 report_issue_url = gen_report_issue_url("https://github.com/kalray/metalibm/issues/new",
                     precision=io_format,
