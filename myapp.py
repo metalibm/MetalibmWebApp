@@ -220,13 +220,32 @@ class RootController(TGController):
             language=language)
         ml_code_configuration.GLOBAL_GET_GIT_COMMENT = custom_get_common_git_comment(self.mwa.LOCALHOST, lambda : input_url)
 
-        code = "generated {} for {} with vector_size={}".format(name, io_format, vector_size)
         registered_pass_list = registered_pass_list.split(",")
-        print("registered_pass_list={}".format(registered_pass_list))
+
         report_issue_url = "https://github.com/metalibm/MetalibmWebApp/issues/new"
         error = None
+        # checking inputs
         if not name in self.mwa.FUNCTION_MAP:
             source_code = "unknown function {}".format(name)
+        elif not all((pass_tag in self.mwa.ALLOWED_PASS_LIST) for pass_tag in registered_pass_list): 
+            source_code = "unknown pass in {}".format([pass_tag for pass_tag in registered_pass_list if not pass_tag in self.mwa.ALLOWED_PASS_LIST])
+            print(source_code)
+        # no allowed target list for now
+        elif not io_format in self.mwa.format_list:
+            source_code = ("forbidden format {}".format(io_format))
+            print(source_code)
+        elif not int(vector_size) in  self.mwa.vector_size_list:
+            source_code = ("forbidden vector_size {}".format(vector_size))
+            print(source_code)
+        elif not int(sub_vector_size) in self.mwa.sub_vector_size_list:
+            source_code = ("forbidden sub_vector_size {}".format(sub_vector_size))
+            print(source_code)
+        elif not language in self.mwa.LANGUAGE_MAP:
+            source_code = ("forbidden language {}".format(language))
+            print(source_code)
+        elif not name in self.mwa.FUNCTION_MAP:
+            source_code = ("forbidden function {}".format(name))
+            print(source_code)
         else:
             # clearing logs
             ml_log_report.Log.log_stream.log_output = ""
@@ -239,7 +258,7 @@ class RootController(TGController):
                 debug = bool(debug)
                 target_class = target_parser(target)
                 target_inst = target_class()
-                passes = ["beforecodegen:{}".format(pass_tag) for pass_tag in registered_pass_list]
+                passes = ["beforecodegen:{}".format(pass_tag) for pass_tag in registered_pass_list if pass_tag in self.mwa.ALLOWED_PASS_LIST]
                 args = fct_ctor.get_default_args(
                     precision=precision,
                     vector_size=vector_size,
