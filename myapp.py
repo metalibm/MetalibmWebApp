@@ -75,8 +75,9 @@ class MetalibmWebApp:
 
     # dictionnary tag -> url of application examples
     EXAMPLE_MAP = collections.OrderedDict([
-        ("4-way single precision exponential on x86 AVX2 in C", "{localhost}/function?name=exp&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&new_pass=silence_fp_ops&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion"),
         ("4-way single precision exponential on generic vector target in C", "{localhost}/function?name=exp&io_format=binary32&vector_size=4&sub_vector_size=4&target=vector&language=c&new_pass=basic_block_simplification&registered_pass_list=vector_mask_test_legalization%2Cvirtual_vector_bool_legalization"),
+        ("4-way single precision exponential on x86 AVX2 in C", "{localhost}/function?name=exp&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&new_pass=silence_fp_ops&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion"),
+        ("single precision division in C", "{localhost}/function?name=div&io_format=binary32&vector_size=1&sub_vector_size=1&target=generic&language=c&new_pass=expand_multi_precision&registered_pass_list=basic_legalization%2Cexpand_multi_precision%2Ccheck_processor_support"),
         ("single precision exponential in LLVM-IR", "{localhost}/function?name=exp&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir&new_pass=rtl_legalize&registered_pass_list=gen_basic_block%2Cbasic_block_simplification%2Cssa_translation"),
     ])
 
