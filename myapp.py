@@ -7,6 +7,7 @@ import collections
 
 from wsgiref.simple_server import make_server
 from tg import MinimalApplicationConfigurator
+from tg.configurator.components.statics import StaticsConfigurationComponent
 from tg import expose, TGController
 
 from metalibm_core.utility.ml_template import (
@@ -293,9 +294,16 @@ if __name__ == "__main__":
     LOCALHOST = args.localhost
     # Configure a new minimal application with our root controller.
     config = MinimalApplicationConfigurator()
+    config.register(StaticsConfigurationComponent)
     config.update_blueprint({
         'root_controller': RootController(LOCALHOST),
         'renderers': ['kajiki']
+    })
+    config.update_blueprint({
+        "serve_static": True,
+        "paths": {
+            "static_files": "public"
+        }
     })
 
     print("Serving on port {}...".format(PORT))
