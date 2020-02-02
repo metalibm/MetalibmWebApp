@@ -1,30 +1,23 @@
-#FROM ubuntu:xenial # 16.04 LTS
-#FROM registry.gitlab.com/metalibm-dev/pythonsollya:ci_sollya_master
-FROM ubuntu:18.04
+FROM ubuntu:18.04 AS mwa_base_deps
 
 RUN apt-get update
 
-RUN apt-get install -y build-essential
-RUN apt-get install -y git
+RUN apt-get install -y build-essential git
+RUN apt-get install -y python3 python3-setuptools libpython3-dev python3-pip
+RUN apt-get install -y libmpfr-dev libmpfi-dev libfplll-dev libxml2-dev wget
+
+FROM mwa_base_deps AS mwa_custom_deps_build
 
 # install sollya's dependency
-RUN apt-get install -y libmpfr-dev libmpfi-dev libfplll-dev libxml2-dev
-
-RUN apt-get install -y python3 python3-setuptools libpython3-dev python3-pip
 
 # install sollya
 WORKDIR  /home/
-RUN apt-get install -y wget
 
 # sollya weekly release (which implement sollya_lib_obj_is_external_data
 # contrary to sollya 7.0 release)
-RUN wget http://sollya.gforge.inria.fr/sollya-weekly-09-23-2019.tar.gz
-RUN tar -xzf sollya-weekly-09-23-2019.tar.gz
+RUN wget http://sollya.gforge.inria.fr/sollya-weekly-09-23-2019.tar.gz && tar -xzf sollya-weekly-09-23-2019.tar.gz
 WORKDIR /home/sollya-weekly-09-23-2019/
-RUN mkdir -p /app/local/python3/
-RUN ./configure --prefix /app/local
-RUN make -j8
-RUN make install
+RUN mkdir -p /app/local/python3/ && ./configure --prefix /app/local && make -j8 && make install
 
 
 # installing pythonsollya
@@ -57,6 +50,10 @@ RUN ./configure --prefix=/app/local/
 RUN ./remake
 RUN ./remake install
 
+FROM mwa_base_deps AS mwa_metalibm_cache
+
+COPY --from=mwa_custom_deps_build /app/local /app/local
+
 # downloading metalibm-lugdunum
 WORKDIR /home/
 RUN git clone https://github.com/kalray/metalibm.git -b new_vector_lib
@@ -64,10 +61,11 @@ WORKDIR /home/metalibm/
 
 ENV LD_LIBRARY_PATH=/app/local/lib/
 ENV PYTHONPATH=/app/local/python3/
-RUN PYTHONPATH=$PWD:$PYTHONPATH  ML_SRC_DIR=$PWD python3 valid/soft_unit_test.py
 
 
 RUN pip3 install cython
+
+FROM mwa_metalibm_cache AS mwa-base-image
 
 # setting env for experiment execution
 WORKDIR /home/
@@ -80,5 +78,10 @@ RUN pip3 install -r /home/MetalibmWebApp/requirements.txt
 
 EXPOSE 8080
 
-RUN echo "#! /bin/sh\ncd /home/MetalibmWebApp/ && python3 myapp.py" > /app/local/bin/launch_app
-RUN chmod 777 /app/local/bin/launch_app
+FROM mwa-base-image AS mwa-debug-image
+
+CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost", "http://localhost:8080"]
+
+FROM mwa-base-image AS mwa-release-image
+
+#CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost", "https://metalibmwebapp.appspot.com"]
