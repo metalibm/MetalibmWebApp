@@ -321,7 +321,7 @@ if __name__ == "__main__":
     config.update_blueprint({
         "serve_static": True,
         "paths": {
-            "static_files": "public"
+            "static_files": os.path.join(MetalibmWebApp.SCRIPT_DIR, "public")
         }
     })
 
