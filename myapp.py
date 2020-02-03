@@ -220,7 +220,7 @@ class RootController(TGController):
             language=language)
         ml_code_configuration.GLOBAL_GET_GIT_COMMENT = custom_get_common_git_comment(self.mwa.LOCALHOST, lambda : input_url)
 
-        registered_pass_list = registered_pass_list.split(",")
+        registered_pass_list = [tag for tag in registered_pass_list.split(",") if tag != ""]
 
         report_issue_url = "https://github.com/metalibm/MetalibmWebApp/issues/new"
         error = None
