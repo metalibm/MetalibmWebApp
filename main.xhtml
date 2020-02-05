@@ -130,7 +130,11 @@ var pass_number = ${len(registered_pass_list)};
                   <b>Generation options:</b><br/>
               </td>
               <td>
-                  <b>Generated code result:</b><br/>
+                  <b>Code result:</b>
+                <py:if test="not total_time is None">
+                    <i> (generated in ${"{:.3f}".format(total_time)} second(s) </i>
+                </py:if>
+                  <br/>
               </td>
           </tr>
 		  <tr>

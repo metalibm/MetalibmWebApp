@@ -3,6 +3,7 @@ import traceback
 import argparse
 import os
 import collections
+import time
 
 
 from wsgiref.simple_server import make_server
@@ -205,12 +206,14 @@ class RootController(TGController):
             language="c",
             name=self.mwa.option_dict["function_name_list"][0],
             error=None,
+            total_time=None,
             **self.mwa.option_dict)
 
 
     @expose(MetalibmWebApp.TEMPLATE, content_type="text/html")
     def function(self, name, io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c"):
 
+        total_time = None
         input_url = "{localhost}/function?name={name}&io_format={io_format}&vector_size={vector_size}&target={target}&registered_pass_list={registered_pass_list}&debug={debug}&language={language}".format(
             localhost=self.mwa.LOCALHOST,
             name=name, io_format=io_format,
@@ -250,6 +253,7 @@ class RootController(TGController):
             # clearing logs
             ml_log_report.Log.log_stream.log_output = ""
             try:
+                start_time = time.perf_counter()
                 fct_ctor, fct_extra_args = self.mwa.FUNCTION_MAP[name]
                 language_object = self.mwa.LANGUAGE_MAP[language]
                 precision = precision_parser(io_format)
@@ -270,6 +274,7 @@ class RootController(TGController):
                     **fct_extra_args)
                 fct_instance = fct_ctor(args=args)
                 source_code = fct_instance.generate_full_source_code()
+                total_time = time.perf_counter() - start_time
             except:
                 e = sys.exc_info()
                 error = "Output: \n{}\nException:\n {}".format(ml_log_report.Log.log_stream.log_output, "".join(traceback.format_exception(*e)))
@@ -296,6 +301,7 @@ class RootController(TGController):
             registered_pass_list=registered_pass_list,
             report_issue_url=report_issue_url,
             error=error,
+            total_time=total_time,
             **self.mwa.option_dict)
 
 
