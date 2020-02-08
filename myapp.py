@@ -141,6 +141,7 @@ class MetalibmWebApp:
         "vector_mask_test_legalization",
         "vector_promotion",
         "virtual_vector_bool_legalization",
+        "numerical_simplification",
         # "check_generic",
         #"critical_path_eval",
         #"dump_with_stages",
