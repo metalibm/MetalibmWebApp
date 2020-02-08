@@ -295,10 +295,17 @@ var pass_number = ${len(registered_pass_list)};
                             <p style="text-align: center; font-size: 15px; font-weight: bold; color: red;"> Will clear every other registered passes </p>
                         </td>
                         <td>
-                               <input type="button" style="width: 300px" value="Add LLVM required passes" onclick="add_llvm_passes()"/> 
-                               <input type="button" style="width: 300px" value="vector recommended passes" onclick="add_vector_passes()"/> 
-                               <input type="button" style="width: 300px" value="x86-SSE recommended passes" onclick="add_x86_sse_passes()"/> 
-                               <input type="button" style="width: 300px" value="x86-AVX recommended passes" onclick="add_x86_avx_passes()"/> 
+                            <select style="width: 300px" id="preconf_flow">
+                                <option value="llvm_flow">LLVM required passes</option>
+                                <option value="vector_flow">Vector recommended passes</option>
+                                <option value="x86_sse_flow">x86 SSE recommended passes</option>
+                                <option value="x86_avx_flow">x86-AVX recommended passes</option>
+                            </select>
+                            <br/>
+                            <center>
+                                <input type="button" value="Clear and Add" onclick="add_preconf_flow()"/>
+                            </center>
+
                         </td>
                     </tr>
                     <tr>

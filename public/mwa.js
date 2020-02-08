@@ -153,6 +153,20 @@ function add_x86_avx_passes() {
     add_new_pass_by_name("m256_promotion");
 }
 
+function add_preconf_flow() {
+	var preconf_selection = document.getElementById("preconf_flow");
+    var selected_flow = preconf_selection.options[preconf_selection.selectedIndex].value;
+    console.log("select flow: " + selected_flow);
+    if (selected_flow == "llvm_flow") add_llvm_passes();
+    else if (selected_flow == "vector_flow") add_vector_passes();
+    else if (selected_flow == "x86_sse_flow") add_x86_sse_passes();
+    else if (selected_flow == "x86_avx_flow") add_x86_avx_passes();
+    else {
+        console.log("unknown pre-configure flow: " + selected_flow);
+    }
+
+}
+
 function copyCodeToClipboard() {
 	var copyText = document.getElementById("sourceCode");
 	updateClipboard(copyText.value)
