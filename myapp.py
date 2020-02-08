@@ -292,7 +292,7 @@ class RootController(TGController):
                 total_time = time.perf_counter() - start_time
             except:
                 e = sys.exc_info()
-                error = "Output: \n{}\nException:\n {}".format(ml_log_report.Log.log_stream.log_output, "".join(traceback.format_exception(*e)))
+                error = "Output: \n{}\nException:\n {}".format(ml_log_report.Log.log_stream.log_output, "".join(traceback.format_exception(*e))).replace('\n', '<br/>')
                 source_code = ""
                 report_issue_url = gen_report_issue_url("https://github.com/kalray/metalibm/issues/new",
                     precision=io_format,
