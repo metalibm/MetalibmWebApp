@@ -175,6 +175,22 @@ var pass_number = ${len(registered_pass_list)};
                     </tr>
                     <tr>
                         <td class="option_label_cell">
+                            <label class="option_label">Input Range:</label>
+                        </td>
+                        <td>
+                            <input id="range_lo" size="5" name="range_lo" value="${range_lo}"></input>
+                            <input id="range_hi" size="5" name="range_hi" value="${range_hi}"></input>
+                            <py:if test="range_nan">
+                                <input type="checkbox" name="range_nan" id="range_nan" value="True" checked="true"/>
+                            </py:if><py:else>
+                                <input type="checkbox" name="range_nan" id="range_nan" value="True"/>
+                            </py:else>
+                            NaN included.
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="option_label_cell">
                             <label class="option_label">Debug:</label>
                         </td>
                         <td>

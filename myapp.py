@@ -5,6 +5,8 @@ import os
 import collections
 import time
 
+import sollya
+
 
 from wsgiref.simple_server import make_server
 from tg import MinimalApplicationConfigurator
@@ -206,12 +208,15 @@ class RootController(TGController):
             language="c",
             name=self.mwa.option_dict["function_name_list"][0],
             error=None,
+            range_lo="-infty",
+            range_hi="+infty",
+            range_nan=True,
             total_time=None,
             **self.mwa.option_dict)
 
 
     @expose(MetalibmWebApp.TEMPLATE, content_type="text/html")
-    def function(self, name, io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c"):
+    def function(self, name, io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c", range_nan="false", range_lo="-infty", range_hi="+infty"):
 
         total_time = None
         input_url = "{localhost}/function?name={name}&io_format={io_format}&vector_size={vector_size}&target={target}&registered_pass_list={registered_pass_list}&debug={debug}&language={language}".format(
@@ -249,6 +254,9 @@ class RootController(TGController):
         elif not name in self.mwa.FUNCTION_MAP:
             source_code = ("forbidden function {}".format(name))
             print(source_code)
+        elif not range_nan.lower() in ["true", "false"]:
+            source_code = ("invalid range NaN  flag {}".format(range_nan))
+            print(source_code)
         else:
             # clearing logs
             ml_log_report.Log.log_stream.log_output = ""
@@ -259,12 +267,19 @@ class RootController(TGController):
                 precision = precision_parser(io_format)
                 vector_size = int(vector_size)
                 sub_vector_size = int(sub_vector_size)
+                #range_nan = bool(range_nan)
+                range_nan = range_nan.lower() in ["true"]
+                if range_nan:
+                    input_interval = None
+                else:
+                    input_interval = sollya.Interval(sollya.parse(range_lo), sollya.parse(range_hi))
                 debug = bool(debug)
                 target_class = target_parser(target)
                 target_inst = target_class()
                 passes = ["beforecodegen:{}".format(pass_tag) for pass_tag in registered_pass_list if pass_tag in self.mwa.ALLOWED_PASS_LIST]
                 args = fct_ctor.get_default_args(
                     precision=precision,
+                    input_interval=input_interval,
                     vector_size=vector_size,
                     sub_vector_size=sub_vector_size,
                     passes=passes,
@@ -301,6 +316,9 @@ class RootController(TGController):
             registered_pass_list=registered_pass_list,
             report_issue_url=report_issue_url,
             error=error,
+            range_lo=range_lo,
+            range_hi=range_hi,
+            range_nan=range_nan,
             total_time=total_time,
             **self.mwa.option_dict)
 
