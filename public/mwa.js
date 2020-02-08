@@ -104,8 +104,16 @@ function update_registered_pass_list()
     console.log("updating pass list to: ", new_pass_list);
 }
 
+function clear_passes() {
+    grid.remove(grid.getItems(), {removeElements: true});
+}
+
 function add_new_pass() {
     var pass_name = document.getElementById("new_pass").value;
+    add_new_pass_by_name(pass_name);
+}
+
+function add_new_pass_by_name(pass_name) {
     var item_id = "pass_" + pass_number.toString() + "-" + pass_name;
     pass_number++;
 	var new_item = document.createElement("div");
@@ -120,6 +128,29 @@ function add_new_pass() {
 	boardGrid.refreshItems().layout();
 
     update_registered_pass_list();
+}
+
+function add_llvm_passes() {
+    clear_passes();
+    add_new_pass_by_name("gen_basic_block");
+    add_new_pass_by_name("basic_block_simplification");
+    add_new_pass_by_name("ssa_translation");
+}
+
+function add_vector_passes() {
+    clear_passes();
+    add_new_pass_by_name("vector_mask_test_legalization");
+    add_new_pass_by_name("virtual_vector_bool_legalization");
+}
+function add_x86_sse_passes() {
+    clear_passes();
+    add_vector_passes();
+    add_new_pass_by_name("m128_promotion");
+}
+function add_x86_avx_passes() {
+    clear_passes();
+    add_x86_sse_passes();
+    add_new_pass_by_name("m256_promotion");
 }
 
 function copyCodeToClipboard() {
