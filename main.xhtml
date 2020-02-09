@@ -370,6 +370,16 @@ ${code}
 
                 <p> <b>Function name</b> is the name of the elementary function to generate</p>
 
+                <p> <b>Format </b> is the input and output format.</p>
+
+                <p> <b>Input range</b> is the input interval. By adding the pass <i> numerical_simplification</i> you can enable Metalibm to optimize the function using this range information. If <i>NaN included</i> is selected the range is forced to the full range of floating-point values in the given format. </p>
+
+                <p> <b>Debug </b> triggers the insertion of various dynamic value print in the source code.</p>
+                <p> <b>Vector size </b> is the input and output vector size. 1 corresponds to a scalar function. </p>
+                <p> <b>Sub vector size </b> indicates which size of vector must be used to implement the vector function. Metalibm will generate replicated implementation for this sub-vector size and aggregate them to generate the full vector size implementation. </p>
+                <p> <b>Target </b> indicates which backend must be used for code generation. </p>
+                <p> <b>Language </b> indicates the output language. </p>
+
                 <p> <b>Pass list</b> is the list of optimization pass executed on the intermediate representation. Select a new pass in the <b> Add a new pass</b> menu and click "Add" to insert it at the end of the optimization pipeline. You can re-order passes by dragging and dropping them. You can delete a pass by dragging it and dropping outside of the pass list box. 
                 </p>
                 <p>

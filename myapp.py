@@ -207,7 +207,7 @@ class RootController(TGController):
             debug=False,
             target="generic",
             language="c",
-            name=self.mwa.option_dict["function_name_list"][0],
+            name="exp", # self.mwa.option_dict["function_name_list"][0],
             error=None,
             range_lo="-infty",
             range_hi="+infty",
