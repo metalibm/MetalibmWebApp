@@ -312,11 +312,14 @@ var pass_number = ${len(registered_pass_list)};
                         </td>
                         <td>
                             <select style="width: 300px" id="preconf_flow">
-                                <option value="llvm_flow">LLVM required passes</option>
-                                <option value="vector_flow">Vector recommended passes</option>
-                                <option value="x86_sse_flow">x86 SSE recommended passes</option>
-                                <option value="x86_avx_flow">x86-AVX recommended passes</option>
+                                <py:for each="flow in sorted(preconf_flow)">
+                                        <option value="${flow}">${preconf_flow[flow]['title']}</option>
+                                </py:for>
                             </select>
+                            <script>
+                                ${literal(preconf_flow_script)}
+                            </script>
+                            
                             <br/>
                             <center>
                                 <input type="button" value="Clear and Add" onclick="add_preconf_flow()"/>

@@ -12,6 +12,7 @@ from wsgiref.simple_server import make_server
 from tg import MinimalApplicationConfigurator
 from tg.configurator.components.statics import StaticsConfigurationComponent
 from tg import expose, TGController
+import kajiki
 
 from metalibm_core.utility.ml_template import (
     precision_parser, target_parser, target_map
@@ -77,6 +78,32 @@ def custom_get_common_git_comment(localhost, url_getter):
     return func
 
 
+PRE_CONFIGURE_FLOWS = {
+    "llvm_flow": {
+        "title": "LLVM required passes",
+        "pass_list": ["gen_basic_block", "basic_block_simplification", "ssa_translation"],
+    },
+    "vector_flow": {
+        "title": "Vector recommended passes",
+        "pass_list": ["vector_mask_test_legalization", "virtual_vector_bool_legalization"],
+    },
+    "x86_sse_flow": {
+        "title": "x86-SSE recommended passes",
+        "pass_list": ["m128_promotion"],
+    },
+    "x86_avx_flow": {
+        "title": "x86-AVX recommended passes",
+        "pass_list": ["m128_promotion", "m256_promotion"],
+    },
+}
+
+preconf_flow_script= kajiki.TextTemplate("""\
+var pre_conf_map = {
+%for flow in preconf_flow
+    ${'"{}": [{}],\\n\\t'.format(flow, ",".join('"%s"' % tag for tag in preconf_flow[flow]['pass_list']))}
+%end
+};
+""")({"preconf_flow": PRE_CONFIGURE_FLOWS}).render()
 
 class MetalibmWebApp:
     SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -166,6 +193,8 @@ class MetalibmWebApp:
             "language_list": list(self.LANGUAGE_MAP.keys()),
             "example_map": {k: self.encode_url(v) for k, v in self.EXAMPLE_MAP.items()},
             "localhost": self.LOCALHOST,
+            "preconf_flow": PRE_CONFIGURE_FLOWS,
+            "preconf_flow_script": preconf_flow_script,
         }
 
 

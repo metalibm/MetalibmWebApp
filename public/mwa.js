@@ -104,15 +104,19 @@ function update_registered_pass_list()
     console.log("updating pass list to: ", new_pass_list);
 }
 
+/** Clean all passes already registered */
 function clear_passes() {
+    console.log("removing every registered passes");
     grid.remove(grid.getItems(), {removeElements: true});
 }
 
+/** Add a new pass selected using the "new_pass" menu */
 function add_new_pass() {
     var pass_name = document.getElementById("new_pass").value;
     add_new_pass_by_name(pass_name);
 }
 
+/** add a new pass selected by the @p pass_name argument */
 function add_new_pass_by_name(pass_name) {
     var item_id = "pass_" + pass_number.toString() + "-" + pass_name;
     pass_number++;
@@ -130,41 +134,23 @@ function add_new_pass_by_name(pass_name) {
     update_registered_pass_list();
 }
 
-function add_llvm_passes() {
-    clear_passes();
-    add_new_pass_by_name("gen_basic_block");
-    add_new_pass_by_name("basic_block_simplification");
-    add_new_pass_by_name("ssa_translation");
+function add_pass_list(pass_list)
+{
+    for (var i = 0; i < pass_list.length; ++i) {
+        add_new_pass_by_name(pass_list[i])
+    };
 }
 
-function add_vector_passes() {
-    clear_passes();
-    add_new_pass_by_name("vector_mask_test_legalization");
-    add_new_pass_by_name("virtual_vector_bool_legalization");
-}
-function add_x86_sse_passes() {
-    clear_passes();
-    add_vector_passes();
-    add_new_pass_by_name("m128_promotion");
-}
-function add_x86_avx_passes() {
-    clear_passes();
-    add_x86_sse_passes();
-    add_new_pass_by_name("m256_promotion");
-}
-
+/** When triggered, look at selected pre-configuration flow,
+ *  clear all registered passes and add the passes corresponding
+ *  to the selected flow
+ */
 function add_preconf_flow() {
+    clear_passes();
 	var preconf_selection = document.getElementById("preconf_flow");
     var selected_flow = preconf_selection.options[preconf_selection.selectedIndex].value;
     console.log("select flow: " + selected_flow);
-    if (selected_flow == "llvm_flow") add_llvm_passes();
-    else if (selected_flow == "vector_flow") add_vector_passes();
-    else if (selected_flow == "x86_sse_flow") add_x86_sse_passes();
-    else if (selected_flow == "x86_avx_flow") add_x86_avx_passes();
-    else {
-        console.log("unknown pre-configure flow: " + selected_flow);
-    }
-
+    add_pass_list(pre_conf_map[selected_flow]);
 }
 
 function copyCodeToClipboard() {
