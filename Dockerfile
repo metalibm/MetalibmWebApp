@@ -2,12 +2,13 @@ FROM ubuntu:18.04 AS mwa_base_deps
 
 RUN apt-get update
 
-RUN apt-get install -y build-essential git
+RUN apt-get install -y git
 RUN apt-get install -y python3 python3-setuptools libpython3-dev python3-pip
 RUN apt-get install -y libmpfr-dev libmpfi-dev libfplll-dev libxml2-dev wget
 
 FROM mwa_base_deps AS mwa_custom_deps_build
 
+RUN apt-get install -y build-essential
 # install sollya's dependency
 
 # install sollya
@@ -55,8 +56,13 @@ FROM mwa_base_deps AS mwa_metalibm_cache
 COPY --from=mwa_custom_deps_build /app/local /app/local
 
 # downloading metalibm-lugdunum
+ARG METALIBM_BRANCH=unknown
+ENV METALIBM_BRANCH=$METALIBM_BRANCH
+# useful to trigger re-build when chaning metalibm, changing
+# METALIBM_BUILD_VERSION will break docker cache here
+ARG METALIBM_BUILD_VERSION=unknown
 WORKDIR /home/
-RUN git clone https://github.com/kalray/metalibm.git -b new_vector_lib
+RUN git clone https://github.com/kalray/metalibm.git -b $METALIBM_BRANCH
 WORKDIR /home/metalibm/
 
 ENV LD_LIBRARY_PATH=/app/local/lib/
@@ -77,6 +83,7 @@ RUN git clone https://github.com/metalibm/MetalibmWepApp.git /home/MetalibmWebAp
 RUN pip3 install -r /home/MetalibmWebApp/requirements.txt
 
 EXPOSE 8080
+ENV PATH=/app/local/bin:$PATH
 
 FROM mwa-base-image AS mwa-debug-image
 
@@ -84,4 +91,4 @@ CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost"
 
 FROM mwa-base-image AS mwa-release-image
 
-#CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost", "https://metalibmwebapp.appspot.com"]
+#CMD ["python3", "/home/etalibmWebApp/myapp.py", "--port", "8080", "--localhost", "https://metalibmwebapp.appspot.com"]
