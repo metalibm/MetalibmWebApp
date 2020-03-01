@@ -143,18 +143,10 @@ var pass_number = ${len(registered_pass_list)};
                 <table>
                     <tr>
                         <td width="150px" class="option_label_cell">
-                            <label class="option_label">Function Name:</label>
+                            <label class="option_label">Function expression:</label>
                         </td>
                         <td width="350px">
-                            <select name="name" id="name" class="option_select">
-                                <py:for each="possible_name in function_name_list">
-                                    <py:if test="name == possible_name">
-                                        <option value="${possible_name}" selected="selected">${possible_name}</option>
-                                    </py:if><py:else>
-                                        <option value="${possible_name}">${possible_name}</option>
-                                    </py:else>
-                                </py:for>
-                            </select>
+                            <input name="fct_expr" id="fct_expr" value="${fct_expr}" style="text-align: right;" />
                         </td>
                     </tr>
                     <tr>
@@ -371,7 +363,7 @@ ${code}
 			<td colspan="2" width="1000px">
                 <b><u>Help:</u></b>
 
-                <p> <b>Function name</b> is the name of the elementary function to generate</p>
+                <p> <b>Function expression</b> is the function expression to be generated. x and y are valid input varibles. The 4 basic operations (+, -, / and *) are supported. The following elementary functions are supported: exp, log, log2, log10, exp2, expm1, sqrt, cbrt, cos, sin, cosh, sinh, tanh.</p>
 
                 <p> <b>Format </b> is the input and output format.</p>
 

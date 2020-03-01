@@ -30,6 +30,8 @@ import metalibm_core.utility.version_info as ml_version_info
 
 import metalibm_core.utility.log_report as ml_log_report
 
+import metalibm_functions.function_expr as ml_function_expr
+
 import metalibm_functions.ml_exp
 import metalibm_functions.ml_expm1
 import metalibm_functions.ml_exp2
@@ -139,10 +141,10 @@ class MetalibmWebApp:
 
     # dictionnary tag -> url of application examples
     EXAMPLE_MAP = collections.OrderedDict([
-        ("4-way single precision exponential on generic vector target in C", "{localhost}/function?name=exp&io_format=binary32&vector_size=4&sub_vector_size=4&target=vector&language=c&new_pass=basic_block_simplification&registered_pass_list=vector_mask_test_legalization%2Cvirtual_vector_bool_legalization"),
-        ("4-way single precision exponential on x86 AVX2 in C", "{localhost}/function?name=exp&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&new_pass=silence_fp_ops&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion"),
-        ("single precision division in C", "{localhost}/function?name=div&io_format=binary32&vector_size=1&sub_vector_size=1&target=generic&language=c&new_pass=expand_multi_precision&registered_pass_list=basic_legalization%2Cexpand_multi_precision%2Ccheck_processor_support"),
-        ("single precision exponential in LLVM-IR", "{localhost}/function?name=exp&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir&new_pass=rtl_legalize&registered_pass_list=gen_basic_block%2Cbasic_block_simplification%2Cssa_translation"),
+        ("4-way single precision exponential on generic vector target in C", "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=4&sub_vector_size=4&target=vector&language=c&new_pass=basic_block_simplification&registered_pass_list=vector_mask_test_legalization%2Cvirtual_vector_bool_legalization"),
+        ("4-way single precision exponential on x86 AVX2 in C", "{localhost}/function?fct_expr=exp(x)&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&new_pass=silence_fp_ops&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion"),
+        ("single precision division in C", "{localhost}/function?fct_expr=div(x,y)&io_format=binary32&vector_size=1&sub_vector_size=1&target=generic&language=c&new_pass=expand_multi_precision&registered_pass_list=basic_legalization%2Cexpand_multi_precision%2Ccheck_processor_support"),
+        ("single precision exponential in LLVM-IR", "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir&new_pass=rtl_legalize&registered_pass_list=gen_basic_block%2Cbasic_block_simplification%2Cssa_translation"),
     ])
 
     ALLOWED_PASS_LIST = [
@@ -155,6 +157,7 @@ class MetalibmWebApp:
         "check_target_support",
         "dump",
         "expand_multi_precision",
+        "evaluate_range",
         "fuse_fma",
         "gen_basic_block",
         "instantiate_abstract_prec",
@@ -212,11 +215,11 @@ class MyLogHandler:
 def gen_report_issue_url(url="https://github.com/kalray/metalibm/issues/new", **kw):
     """ Generated an url to automatically report an error in metalibm
         encountered from the metalibm web app """
-    title="issue with {} reported from MWA".format(kw["name"])
+    title="issue with expression {} reported from MWA".format(kw["fct_expr"])
     return "{}?title={}&body={}".format(url, title, ", ".join("{}={}".format(k, v) for k, v in kw.items()))
 
 # installing custom log handler for metalibm
-ml_log_report.Log.exit_on_error = False
+ml_log_report.Log.exit_on_error = True
 ml_log_report.Log.log_stream = MyLogHandler()
 
 # RootController of our web app, in charge of serving content for /
@@ -236,7 +239,7 @@ class RootController(TGController):
             debug=False,
             target="generic",
             language="c",
-            name="exp", # self.mwa.option_dict["function_name_list"][0],
+            fct_expr="exp(x)",
             error=None,
             range_lo="-infty",
             range_hi="+infty",
@@ -246,12 +249,12 @@ class RootController(TGController):
 
 
     @expose(MetalibmWebApp.TEMPLATE, content_type="text/html")
-    def function(self, name, io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c", range_nan="false", range_lo="-infty", range_hi="+infty"):
+    def function(self, fct_expr="exp(x)", io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c", range_nan="false", range_lo="-infty", range_hi="+infty"):
 
         total_time = None
-        input_url = "{localhost}/function?name={name}&io_format={io_format}&vector_size={vector_size}&target={target}&registered_pass_list={registered_pass_list}&debug={debug}&language={language}".format(
+        input_url = "{localhost}/function?fct_expr={fct_expr}&io_format={io_format}&vector_size={vector_size}&target={target}&registered_pass_list={registered_pass_list}&debug={debug}&language={language}".format(
             localhost=self.mwa.LOCALHOST,
-            name=name, io_format=io_format,
+            fct_expr=fct_expr, io_format=io_format,
             vector_size=vector_size, target=target,
             registered_pass_list=registered_pass_list,
             sub_vector_size=sub_vector_size, debug=debug,
@@ -263,8 +266,8 @@ class RootController(TGController):
         report_issue_url = "https://github.com/metalibm/MetalibmWebApp/issues/new"
         error = None
         # checking inputs
-        if not name in self.mwa.FUNCTION_MAP:
-            source_code = "unknown function {}".format(name)
+        if not ml_function_expr.check_fct_expr(fct_expr):
+            source_code = "invalid function expression {}".format(fct_expr)
         elif not all((pass_tag in self.mwa.ALLOWED_PASS_LIST) for pass_tag in registered_pass_list): 
             source_code = "unknown pass in {}".format([pass_tag for pass_tag in registered_pass_list if not pass_tag in self.mwa.ALLOWED_PASS_LIST])
             print(source_code)
@@ -281,9 +284,6 @@ class RootController(TGController):
         elif not language in self.mwa.LANGUAGE_MAP:
             source_code = ("forbidden language {}".format(language))
             print(source_code)
-        elif not name in self.mwa.FUNCTION_MAP:
-            source_code = ("forbidden function {}".format(name))
-            print(source_code)
         elif not range_nan.lower() in ["true", "false"]:
             source_code = ("invalid range NaN  flag {}".format(range_nan))
             print(source_code)
@@ -292,7 +292,9 @@ class RootController(TGController):
             ml_log_report.Log.log_stream.log_output = ""
             try:
                 start_time = time.perf_counter()
-                fct_ctor, fct_extra_args = self.mwa.FUNCTION_MAP[name]
+                fct_ctor = ml_function_expr.FunctionExpression
+                arity=ml_function_expr.count_expr_arity(fct_expr)
+                fct_extra_args = {}
                 language_object = self.mwa.LANGUAGE_MAP[language]
                 precision = precision_parser(io_format)
                 vector_size = int(vector_size)
@@ -308,8 +310,10 @@ class RootController(TGController):
                 target_inst = target_class()
                 passes = ["beforecodegen:{}".format(pass_tag) for pass_tag in registered_pass_list if pass_tag in self.mwa.ALLOWED_PASS_LIST]
                 args = fct_ctor.get_default_args(
+                    function_expr_str=[fct_expr],
                     precision=precision,
-                    input_interval=input_interval,
+                    input_precisions=(precision,)*arity,
+                    input_intervals=(input_interval,)*arity,
                     vector_size=vector_size,
                     sub_vector_size=sub_vector_size,
                     passes=passes,
@@ -326,7 +330,7 @@ class RootController(TGController):
                 source_code = ""
                 report_issue_url = gen_report_issue_url("https://github.com/kalray/metalibm/issues/new",
                     precision=io_format,
-                    name=name,
+                    fct_expr=fct_expr,
                     target=target,
                     vector_size=vector_size,
                     debug=debug,
@@ -337,7 +341,7 @@ class RootController(TGController):
         return dict(
             code=source_code,
             precision=io_format,
-            name=name,
+            fct_expr=fct_expr,
             target=target,
             vector_size=vector_size,
             debug=debug,
