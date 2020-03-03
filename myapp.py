@@ -59,10 +59,10 @@ def custom_get_common_git_comment(localhost, url_getter):
 
 
 PRE_CONFIGURE_FLOWS = {
-    "llvm_flow": {
-        "title": "LLVM required passes",
-        "pass_list": ["gen_basic_block", "basic_block_simplification", "ssa_translation"],
-    },
+    #"llvm_flow": {
+    #    "title": "LLVM required passes",
+    #    "pass_list": ["gen_basic_block", "basic_block_simplification", "ssa_translation"],
+    #},
     "vector_flow": {
         "title": "Vector recommended passes",
         "pass_list": ["vector_mask_test_legalization", "virtual_vector_bool_legalization"],
@@ -98,15 +98,15 @@ class MetalibmWebApp:
 
     format_list = ["binary32", "binary64"]
     vector_size_list = [1, 2, 4, 8]
-    sub_vector_size_list = [1, 2, 4, 8]
+    sub_vector_size_list = [None, 1, 2, 4, 8]
 
 
     # dictionnary tag -> url of application examples
     EXAMPLE_MAP = collections.OrderedDict([
-        ("4-way single precision exponential on generic vector target in C", "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=4&sub_vector_size=4&target=vector&language=c&new_pass=basic_block_simplification&registered_pass_list=vector_mask_test_legalization%2Cvirtual_vector_bool_legalization"),
-        ("4-way single precision exponential on x86 AVX2 in C", "{localhost}/function?fct_expr=exp(x)&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&new_pass=silence_fp_ops&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion"),
-        ("single precision division in C", "{localhost}/function?fct_expr=div(x,y)&io_format=binary32&vector_size=1&sub_vector_size=1&target=generic&language=c&new_pass=expand_multi_precision&registered_pass_list=basic_legalization%2Cexpand_multi_precision%2Ccheck_processor_support"),
-        ("single precision exponential in LLVM-IR", "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir&new_pass=rtl_legalize&registered_pass_list=gen_basic_block%2Cbasic_block_simplification%2Cssa_translation"),
+        ("4-way single precision exponential on generic vector target in C", "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=4&sub_vector_size=4&target=vector&language=c"),
+        ("4-way single precision exponential on x86 AVX2 in C", "{localhost}/function?fct_expr=exp(x)&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion"),
+        ("single precision division in C", "{localhost}/function?fct_expr=div(x,y)&io_format=binary32&vector_size=1&sub_vector_size=1&target=generic&language=c&registered_pass_list=basic_legalization%2Cexpand_multi_precision%2Ccheck_processor_support"),
+        ("single precision exponential in LLVM-IR", "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir"),
     ])
 
     ALLOWED_PASS_LIST = [
@@ -126,6 +126,7 @@ class MetalibmWebApp:
         "instantiate_prec",
         "m128_promotion",
         "m256_promotion",
+        "numerical_simplification",
         "silence_fp_ops",
         "ssa_translation",
         "sub_expr_sharing",
@@ -133,7 +134,6 @@ class MetalibmWebApp:
         "vector_mask_test_legalization",
         "vector_promotion",
         "virtual_vector_bool_legalization",
-        "numerical_simplification",
         # "check_generic",
         #"critical_path_eval",
         #"dump_with_stages",
