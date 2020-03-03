@@ -196,7 +196,7 @@ class RootController(TGController):
             precision=self.mwa.format_list[0],
             registered_pass_list=["check_processor_support"],
             vector_size=1,
-            sub_vector_size=1,
+            sub_vector_size=None,
             debug=False,
             target="generic",
             language="c",
@@ -210,7 +210,7 @@ class RootController(TGController):
 
 
     @expose(MetalibmWebApp.TEMPLATE, content_type="text/html")
-    def function(self, fct_expr="exp(x)", io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=1, debug=False, language="c", range_nan="false", range_lo="-infty", range_hi="+infty"):
+    def function(self, fct_expr="exp(x)", io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size=None, debug=False, language="c", range_nan="false", range_lo="-infty", range_hi="+infty"):
 
         total_time = None
         input_url = "{localhost}/function?fct_expr={fct_expr}&io_format={io_format}&vector_size={vector_size}&target={target}&registered_pass_list={registered_pass_list}&debug={debug}&language={language}".format(

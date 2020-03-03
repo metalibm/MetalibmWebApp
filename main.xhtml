@@ -220,9 +220,9 @@ var pass_number = ${len(registered_pass_list)};
                             <select name="sub_vector_size" id="sub_vector_size" class="option_select">
                                 <py:for each="possible_sub_vector_size in sub_vector_size_list">
                                     <py:if test="possible_sub_vector_size == sub_vector_size">
-                                        <option value="${possible_sub_vector_size}" selected="selected">${possible_sub_vector_size}</option>
+                                        <option value="${possible_sub_vector_size}" selected="selected">${possible_sub_vector_size or 'default'}</option>
                                     </py:if><py:else>
-                                        <option value="${possible_sub_vector_size}">${possible_sub_vector_size}</option>
+                                        <option value="${possible_sub_vector_size}">${possible_sub_vector_size or 'default'}</option>
                                     </py:else>
                                 </py:for>
                         </select>
@@ -398,6 +398,7 @@ ${code}
                     <ul>
                         <li> New interface to describe a function expression </li>
                         <li> Each target defines a default optimization pipeline (no need to add required passes anymore).</li>
+                        <li> Adding default sub-vector size option to let the target chose the sub-vector size value. </li>
                     </ul>
 			</td>
 		</tr>
