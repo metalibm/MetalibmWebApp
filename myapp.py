@@ -32,28 +32,6 @@ import metalibm_core.utility.log_report as ml_log_report
 
 import metalibm_functions.function_expr as ml_function_expr
 
-import metalibm_functions.ml_exp
-import metalibm_functions.ml_expm1
-import metalibm_functions.ml_exp2
-import metalibm_functions.ml_cbrt
-import metalibm_functions.ml_sqrt
-import metalibm_functions.ml_isqrt
-import metalibm_functions.ml_vectorizable_log
-import metalibm_functions.ml_cosh
-import metalibm_functions.ml_sinh
-import metalibm_functions.ml_sincos
-import metalibm_functions.ml_atan
-import metalibm_functions.external_bench
-import metalibm_functions.ml_tanh
-import metalibm_functions.ml_div
-import metalibm_functions.generic_log
-import metalibm_functions.erf
-import metalibm_functions.ml_tanh
-import metalibm_functions.ml_cosh
-import metalibm_functions.ml_sinh
-import metalibm_functions.ml_div
-
-
 GIT_COMMENT_TEMPLATE = """\
 generated using Metalibm Web App ({localhost})
 based on metalibm {version_num}
@@ -111,22 +89,6 @@ class MetalibmWebApp:
     SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
     TEMPLATE = os.path.join(SCRIPT_DIR, "main.xhtml")
 
-    FUNCTION_MAP = {
-        "exp": (metalibm_functions.ml_exp.ML_Exponential, {}),
-        "exp2": (metalibm_functions.ml_exp2.ML_Exp2, {}),
-        "cbrt": (metalibm_functions.ml_cbrt.ML_Cbrt, {}),
-        "div":  (metalibm_functions.ml_div.ML_Division, {}),
-        "sqrt": (metalibm_functions.ml_sqrt.MetalibmSqrt, {}),
-        "log": (metalibm_functions.generic_log.ML_GenericLog, {}),
-        "log2": (metalibm_functions.generic_log.ML_GenericLog, {"basis": 2}),
-        "log10": (metalibm_functions.generic_log.ML_GenericLog, {"basis": 10}),
-        "cos": (metalibm_functions.ml_sincos.ML_SinCos, {"sin_output": False}),
-        "sin": (metalibm_functions.ml_sincos.ML_SinCos, {"sin_output": True}),
-        "erf": (metalibm_functions.erf.ML_Erf, {}),
-        "tanh": (metalibm_functions.ml_tanh.ML_HyperbolicTangent, {}),
-        "cosh": (metalibm_functions.ml_cosh.ML_HyperbolicCosine, {}),
-        "sinh": (metalibm_functions.ml_sinh.ML_HyperbolicSine, {}),
-    }
 
     LANGUAGE_MAP = {
         "c": C_Code,
@@ -190,7 +152,6 @@ class MetalibmWebApp:
             "format_list": self.format_list,
             "vector_size_list": self.vector_size_list,
             "sub_vector_size_list": self.sub_vector_size_list,
-            "function_name_list": sorted(list(self.FUNCTION_MAP.keys())),
             "target_list": sorted(list(target_map.keys())),
             "available_pass_list": sorted(available_pass_list),
             "language_list": list(self.LANGUAGE_MAP.keys()),
