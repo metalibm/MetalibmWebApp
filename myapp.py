@@ -144,7 +144,7 @@ class MetalibmWebApp:
         #"rtl_legalize",
     ]
 
-    def __init__(self, localhost):
+    def __init__(self, localhost, version_info):
         self.LOCALHOST = localhost
         available_pass_list = [tag for tag in Pass.get_pass_tag_list() if tag in self.ALLOWED_PASS_LIST]
 
@@ -159,6 +159,7 @@ class MetalibmWebApp:
             "localhost": self.LOCALHOST,
             "preconf_flow": PRE_CONFIGURE_FLOWS,
             "preconf_flow_script": preconf_flow_script,
+            "version_info": version_info,
         }
 
 
@@ -185,9 +186,9 @@ ml_log_report.Log.log_stream = MyLogHandler()
 
 # RootController of our web app, in charge of serving content for /
 class RootController(TGController):
-    def __init__(self, localhost):
+    def __init__(self, localhost, version_info):
         super().__init__()
-        self.mwa = MetalibmWebApp(localhost)
+        self.mwa = MetalibmWebApp(localhost, version_info)
 
     @expose(MetalibmWebApp.TEMPLATE, content_type="text/html")
     def index(self):
@@ -325,17 +326,21 @@ if __name__ == "__main__":
     parser.add_argument("--localhost", type=str, default="localhost:8080",
                         help="website base url")
     parser.add_argument("--port", type=int, default=8080, help="server connection port")
+    parser.add_argument("--version-info", type=str, default="0.0.0", help="version info to display")
     args = parser.parse_args()
 
     # Serve the newly configured web application.
     PORT = args.port
     LOCALHOST = args.localhost
+    VERSION_INFO = args.version_info
     # Configure a new minimal application with our root controller.
     config = MinimalApplicationConfigurator()
     config.register(StaticsConfigurationComponent)
     config.update_blueprint({
-        'root_controller': RootController(LOCALHOST),
-        'renderers': ['kajiki']
+        'root_controller': RootController(LOCALHOST, VERSION_INFO),
+        'renderers': ['kajiki'],
+        'templating.kajiki.template_extension': '.xhtml',
+        'templating.kajiki.force_mode': 'html5',
     })
     config.update_blueprint({
         "serve_static": True,
