@@ -87,7 +87,8 @@ var pre_conf_map = {
 
 class MetalibmWebApp:
     SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-    TEMPLATE = os.path.join(SCRIPT_DIR, "main.xhtml")
+    MAIN_TEMPLATE = os.path.join(SCRIPT_DIR, "main.xhtml")
+    STAT_TEMPLATE = os.path.join(SCRIPT_DIR, "stats.xhtml")
 
 
     LANGUAGE_MAP = {
@@ -184,13 +185,33 @@ def gen_report_issue_url(url="https://github.com/kalray/metalibm/issues/new", **
 ml_log_report.Log.exit_on_error = True
 ml_log_report.Log.log_stream = MyLogHandler()
 
+class ML_Statistics:
+    def __init__(self):
+        self.num_generated_function = 0
+        self.num_known_errors = 0
+        self.num_unknwon_errors = 0
+        self.num_gen_errors = 0
+
+    @property
+    def num_errors(self):
+        return self.num_known_errors + self.num_unknwon_errors
+
+    def to_dict(self):
+        return {
+            "num_generated_function": self.num_generated_function,
+            "num_known_errors": self.num_known_errors,
+            "num_unknwon_errors": self.num_unknwon_errors,
+            "num_gen_errors": self.num_gen_errors,
+        }
+
 # RootController of our web app, in charge of serving content for /
 class RootController(TGController):
     def __init__(self, localhost, version_info):
         super().__init__()
         self.mwa = MetalibmWebApp(localhost, version_info)
+        self.stats = ML_Statistics()
 
-    @expose(MetalibmWebApp.TEMPLATE, content_type="text/html")
+    @expose(MetalibmWebApp.MAIN_TEMPLATE, content_type="text/html")
     def index(self):
         return dict(
             code="no code generated",
@@ -210,8 +231,12 @@ class RootController(TGController):
             **self.mwa.option_dict)
 
 
-    @expose(MetalibmWebApp.TEMPLATE, content_type="text/html")
-    def function(self, fct_expr="exp(x)", io_format="binary32", vector_size=1, target="generic", registered_pass_list="", sub_vector_size="default", debug=False, language="c", range_nan="false", range_lo="-infty", range_hi="+infty"):
+    @expose(MetalibmWebApp.MAIN_TEMPLATE, content_type="text/html")
+    def function(self, fct_expr="exp(x)", io_format="binary32", vector_size=1,
+                 target="generic", registered_pass_list="",
+                 sub_vector_size="default", debug=False, language="c",
+                 range_nan="false", range_lo="-infty", range_hi="+infty",
+                 bench="false"):
 
         total_time = None
         input_url = "{localhost}/function?fct_expr={fct_expr}&io_format={io_format}&vector_size={vector_size}&target={target}&registered_pass_list={registered_pass_list}&debug={debug}&language={language}".format(
@@ -228,9 +253,11 @@ class RootController(TGController):
         report_issue_url = "https://github.com/metalibm/MetalibmWebApp/issues/new"
         error = None
         # checking inputs
+        class KnownError(Exception): pass
         try:
+            no_error = False
             if not ml_function_expr.check_fct_expr(fct_expr):
-                source_code = "invalid function expression {}".format(fct_expr)
+                source_code = "invalid function expression \"{}\"".format(fct_expr)
             elif not all((pass_tag in self.mwa.ALLOWED_PASS_LIST) for pass_tag in registered_pass_list): 
                 source_code = "unknown pass in {}".format([pass_tag for pass_tag in registered_pass_list if not pass_tag in self.mwa.ALLOWED_PASS_LIST])
                 print(source_code)
@@ -250,7 +277,21 @@ class RootController(TGController):
             elif not range_nan.lower() in ["true", "false"]:
                 source_code = ("invalid range NaN  flag {}".format(range_nan))
                 print(source_code)
+            elif not bench.lower() in ["true", "false"]:
+                source_code = ("invalid bench flag {}".format(bench))
+                print(source_code)
+            else:
+                no_error = True
+
+            if not no_error:
+                raise KnownError(source_code)
+        except KnownError as e:
+            # stat counter
+            self.stats.num_known_errors += 1
+            error = e
         except:
+            # stat counter
+            self.stats.num_unknwon_errors += 1
             e = sys.exc_info()
             error = "Exception:\n {}".format("".join(traceback.format_exception(*e))).replace('\n', '<br/>')
             source_code = ""
@@ -268,6 +309,7 @@ class RootController(TGController):
                 sub_vector_size = None if sub_vector_size == "default" else int(sub_vector_size)
                 #range_nan = bool(range_nan)
                 range_nan = range_nan.lower() in ["true"]
+                bench = bench.lower() in ["true"]
                 if range_nan:
                     input_interval = None
                 else:
@@ -286,12 +328,15 @@ class RootController(TGController):
                     passes=passes,
                     language=language_object,
                     debug=debug,
+                    bench_test_number=100 if bench else None,
+                    bench_test_range=input_interval,
                     target=target_inst,
                     **fct_extra_args)
                 fct_instance = fct_ctor(args=args)
                 source_code = fct_instance.generate_full_source_code()
                 total_time = time.perf_counter() - start_time
             except:
+                self.stats.num_gen_errors += 1
                 e = sys.exc_info()
                 error = "Output: \n{}\nException:\n {}".format(ml_log_report.Log.log_stream.log_output, "".join(traceback.format_exception(*e))).replace('\n', '<br/>')
                 source_code = ""
@@ -305,6 +350,8 @@ class RootController(TGController):
                     sub_vector_size=sub_vector_size,
                     registered_pass_list=registered_pass_list,
                 )
+            else:
+                self.stats.num_generated_function += 1
         return dict(
             code=source_code,
             precision=io_format,
@@ -323,6 +370,13 @@ class RootController(TGController):
             total_time=total_time,
             **self.mwa.option_dict)
 
+    @expose(MetalibmWebApp.STAT_TEMPLATE, content_type="text/html")
+    def statistics(self):
+        """ generate dynamic page with error and generation statistics """
+        return dict(
+            stats=self.stats.to_dict(),
+            localhost=self.mwa.LOCALHOST,
+        )
 
 
 
@@ -355,5 +409,7 @@ if __name__ == "__main__":
     })
 
     print("Serving on port {}...".format(PORT))
+    print("LOCALHOST is {}...".format(LOCALHOST))
+    print("VERSION_INFO is {}...".format(VERSION_INFO))
     httpd = make_server('', PORT, config.make_wsgi_app())
     httpd.serve_forever()
