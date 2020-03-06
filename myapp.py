@@ -5,6 +5,8 @@ import os
 import collections
 import time
 
+from google.cloud import logging
+
 import sollya
 
 
@@ -210,6 +212,12 @@ class RootController(TGController):
         super().__init__()
         self.mwa = MetalibmWebApp(localhost, version_info)
         self.stats = ML_Statistics()
+        self.logger_client = logging.Client()
+        self.logger = self.logger_client.logger("mwa-log")
+
+
+    def log_msg(self, msg, tag="info"):
+        self.logger.log_text("[{}] {}".format(tag, msg))
 
     @expose(MetalibmWebApp.MAIN_TEMPLATE, content_type="text/html")
     def index(self):
@@ -289,12 +297,14 @@ class RootController(TGController):
             # stat counter
             self.stats.num_known_errors += 1
             error = e
+            self.log_msg(e, tag="error")
         except:
             # stat counter
             self.stats.num_unknwon_errors += 1
             e = sys.exc_info()
             error = "Exception:\n {}".format("".join(traceback.format_exception(*e))).replace('\n', '<br/>')
             source_code = ""
+            self.log_msg(error, tag="error")
         else:
             # clearing logs
             ml_log_report.Log.log_stream.log_output = ""
@@ -340,6 +350,7 @@ class RootController(TGController):
                 e = sys.exc_info()
                 error = "Output: \n{}\nException:\n {}".format(ml_log_report.Log.log_stream.log_output, "".join(traceback.format_exception(*e))).replace('\n', '<br/>')
                 source_code = ""
+                self.log_msg(error, tag="error")
                 report_issue_url = gen_report_issue_url("https://github.com/kalray/metalibm/issues/new",
                     precision=io_format,
                     fct_expr=fct_expr,
@@ -352,6 +363,7 @@ class RootController(TGController):
                 )
             else:
                 self.stats.num_generated_function += 1
+                self.log_msg(input_url, tag="info")
         return dict(
             code=source_code,
             precision=io_format,
