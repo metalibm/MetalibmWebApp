@@ -55,12 +55,15 @@ FROM mwa_base_deps AS mwa_metalibm_cache
 
 COPY --from=mwa_custom_deps_build /app/local /app/local
 
+RUN pip3 install cython
+
 # downloading metalibm-lugdunum
 ARG METALIBM_BRANCH=unknown
 ENV METALIBM_BRANCH=$METALIBM_BRANCH
 # useful to trigger re-build when chaning metalibm, changing
 # METALIBM_BUILD_VERSION will break docker cache here
 ARG METALIBM_BUILD_VERSION=unknown
+ENV METALIBM_BUILD_VERSION=$METALIBM_BUILD_VERSION
 WORKDIR /home/
 RUN git clone https://github.com/kalray/metalibm.git -b $METALIBM_BRANCH
 WORKDIR /home/metalibm/
@@ -69,7 +72,6 @@ ENV LD_LIBRARY_PATH=/app/local/lib/
 ENV PYTHONPATH=/app/local/python3/
 
 
-RUN pip3 install cython
 
 FROM mwa_metalibm_cache AS mwa-base-image
 
@@ -87,7 +89,8 @@ ENV PATH=/app/local/bin:$PATH
 
 FROM mwa-base-image AS mwa-debug-image
 
-CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost", "http://localhost:8080"]
+#CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost", "http://localhost:8080", "--version-info", $METALIBM_BUILD_VERSION]
+CMD python3 /home/MetalibmWebApp/myapp.py --port 8080 --localhost "http://localhost:8080" --version-info "$METALIBM_BUILD_VERSION"
 
 FROM mwa-base-image AS mwa-release-image
 
