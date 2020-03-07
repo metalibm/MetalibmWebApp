@@ -208,16 +208,22 @@ class ML_Statistics:
 
 # RootController of our web app, in charge of serving content for /
 class RootController(TGController):
-    def __init__(self, localhost, version_info):
+    def __init__(self, localhost, version_info, disable_log=False):
         super().__init__()
         self.mwa = MetalibmWebApp(localhost, version_info)
         self.stats = ML_Statistics()
-        self.logger_client = logging.Client()
-        self.logger = self.logger_client.logger("mwa-log")
+        self.disable_log = disable_log
+        self.logger = None
+        self.init_logging()
 
+    def init_logging(self):
+        if not self.disable_log:
+            logger_client = logging.Client()
+            self.logger = logger_client.logger("mwa-log")
 
     def log_msg(self, msg, tag="info"):
-        self.logger.log_text("[{}] {}".format(tag, msg))
+        if not self.logger is None:
+            self.logger.log_text("[{}] {}".format(tag, msg))
 
     @expose(MetalibmWebApp.MAIN_TEMPLATE, content_type="text/html")
     def index(self):
@@ -398,6 +404,7 @@ if __name__ == "__main__":
                         help="website base url")
     parser.add_argument("--port", type=int, default=8080, help="server connection port")
     parser.add_argument("--version-info", type=str, default="0.0.0", help="version info to display")
+    parser.add_argument("--disable-log", action="store_const", const=True, default=False, help="disable logging of information in gcloud")
     args = parser.parse_args()
 
     # Serve the newly configured web application.
@@ -408,7 +415,7 @@ if __name__ == "__main__":
     config = MinimalApplicationConfigurator()
     config.register(StaticsConfigurationComponent)
     config.update_blueprint({
-        'root_controller': RootController(LOCALHOST, VERSION_INFO),
+        'root_controller': RootController(LOCALHOST, VERSION_INFO, disable_log=args.disable_log),
         'renderers': ['kajiki'],
         'templating.kajiki.template_extension': '.xhtml',
         'templating.kajiki.force_mode': 'html5',
