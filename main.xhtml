@@ -352,6 +352,11 @@ ${code}
                     <center>
                         <button onclick="copyCodeToClipboard()">Copy source code to clipboard</button>
                     </center>
+                        <b> Build Command: </b> <br/> 
+                        
+                    <code class="bash" style="overflow-y: scroll;height:100px; width: 500px; overflow-x: scroll;" id="rawSourceCode">
+                        ${build_cmd} 
+                    </code>
               </td>
             </py:if><py:else>
                 <td>

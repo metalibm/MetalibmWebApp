@@ -29,6 +29,7 @@ import metalibm_core.utility.log_report as ml_log_report
 import metalibm_core.code_generation.code_configuration as ml_code_configuration
 from metalibm_core.code_generation.code_utility import insert_line_break
 import metalibm_core.utility.version_info as ml_version_info
+from metalibm_core.utility.build_utils import SourceFile
 
 import metalibm_core.utility.log_report as ml_log_report
 
@@ -229,6 +230,7 @@ class RootController(TGController):
     def index(self):
         return dict(
             code="no code generated",
+            build_cmd="no build command available",
             precision=self.mwa.format_list[0],
             registered_pass_list=["check_processor_support"],
             vector_size=1,
@@ -266,6 +268,8 @@ class RootController(TGController):
 
         report_issue_url = "https://github.com/metalibm/MetalibmWebApp/issues/new"
         error = None
+        source_code = ""
+        build_cmd = ""
         # checking inputs
         class KnownError(Exception): pass
         try:
@@ -350,6 +354,7 @@ class RootController(TGController):
                     **fct_extra_args)
                 fct_instance = fct_ctor(args=args)
                 source_code = fct_instance.generate_full_source_code()
+                build_cmd = SourceFile.get_build_command("<source_path>", target_inst, bin_name="ml_bench", shared_object=False, link=True, expand_env_var=False)
                 total_time = time.perf_counter() - start_time
             except:
                 self.stats.num_gen_errors += 1
@@ -372,6 +377,7 @@ class RootController(TGController):
                 self.log_msg(input_url, tag="info")
         return dict(
             code=source_code,
+            build_cmd=build_cmd,
             precision=io_format,
             fct_expr=fct_expr,
             target=target,
