@@ -325,6 +325,19 @@ var pass_number = ${len(registered_pass_list)};
                         </td>
                     </tr>
                     <tr>
+                        <td class="option_label_cell">
+                            <label class="option_label"> Evaluate error: </label>
+                        </td>
+                        <td> 
+                            <py:if test="eval_error">
+                                <input type="checkbox" name="eval_error" checked="true" value="True"/>
+                            </py:if><py:else>
+                                <input type="checkbox" name="eval_error" value="True"/>
+                            </py:else>
+                                
+                        </td>
+                    </tr>
+                    <tr>
                         <td colspan="2">
                             <br/>
                             <div style="text-align:center;">
@@ -347,6 +360,16 @@ var pass_number = ${len(registered_pass_list)};
 ${code}
                     </code>
                 </pre>
+
+                    <p>
+                    <py:if test="not max_error is None">
+                        Evaluated error: ${"{:.2f}".format(float(max_error))} ulp(s)
+                    </py:if>
+                    <br/>
+                        <b> Note: </b> This error was evaluated on random inputs from a subset of the input range.
+                            It is not a certificate for implementation error. The actual error may
+                            be much worse than this metric.
+                    </p>
                     <!-- The button used to copy the text -->
 					<input type="hidden" id="sourceCode" value="${code}"/>
                     <center>
@@ -387,6 +410,7 @@ ${code}
 
                 <p> <b>Pass list</b> is the list of optimization pass executed on the intermediate representation. Select a new pass in the <b> Add a new pass</b> menu and click "Add" to insert it at the end of the optimization pipeline. You can re-order passes by dragging and dropping them. You can delete a pass by dragging it and dropping outside of the pass list box. 
                 </p>
+                <p> <b> Evaluate error</b> triggers the comparison of the generated source against expected value on random inputs. The relative error is reported here (in terms of ulp(s) for a suitable definition of ulp).</p>
                 <p>
                     <b><u>Some examples:</u></b>
                     <ul>

@@ -243,6 +243,8 @@ class RootController(TGController):
             range_lo="-infty",
             range_hi="+infty",
             range_nan=True,
+            eval_error=False,
+            max_error=None,
             total_time=None,
             **self.mwa.option_dict)
 
@@ -252,26 +254,40 @@ class RootController(TGController):
                  target="generic", registered_pass_list="",
                  sub_vector_size="default", debug=False, language="c",
                  range_nan="false", range_lo="-infty", range_hi="+infty",
-                 bench="false"):
+                 bench="false", eval_error="false"):
 
         total_time = None
-        input_url = "{localhost}/function?fct_expr={fct_expr}&io_format={io_format}&vector_size={vector_size}&target={target}&registered_pass_list={registered_pass_list}&debug={debug}&language={language}".format(
+        input_url = ("{localhost}/function?fct_expr={fct_expr}&io_format={io_format}&" +\
+                    "vector_size={vector_size}&target={target}&" +\
+                    "registered_pass_list={registered_pass_list}&" + \
+                    "debug={debug}&language={language}&eval_error={eval_error}").format(
             localhost=self.mwa.LOCALHOST,
             fct_expr=fct_expr, io_format=io_format,
             vector_size=vector_size, target=target,
             registered_pass_list=registered_pass_list,
             sub_vector_size=sub_vector_size, debug=debug,
-            language=language)
+            language=language,
+            eval_error=eval_error)
+
+        # generate git commentary (indicating which version of metalibm was
+        # used to generate code)
         ml_code_configuration.GLOBAL_GET_GIT_COMMENT = custom_get_common_git_comment(self.mwa.LOCALHOST, lambda : input_url)
 
         registered_pass_list = [tag for tag in registered_pass_list.split(",") if tag != ""]
 
-        report_issue_url = "https://github.com/metalibm/MetalibmWebApp/issues/new"
         error = None
         source_code = ""
         build_cmd = ""
+        report_issue_url = ""
+
+        # function results
+        max_error = None
+
         # checking inputs
-        class KnownError(Exception): pass
+        class KnownError(Exception):
+            """ known error exception which can are raised
+                when a manageable error is detected """
+            pass
         try:
             no_error = False
             if not ml_function_expr.check_fct_expr(fct_expr):
@@ -297,6 +313,9 @@ class RootController(TGController):
                 print(source_code)
             elif not bench.lower() in ["true", "false"]:
                 source_code = ("invalid bench flag {}".format(bench))
+                print(source_code)
+            elif not eval_error.lower() in ["true", "false"]:
+                source_code = ("invalid eval_error flag {}".format(bench))
                 print(source_code)
             else:
                 no_error = True
@@ -327,8 +346,8 @@ class RootController(TGController):
                 precision = precision_parser(io_format)
                 vector_size = int(vector_size)
                 sub_vector_size = None if sub_vector_size == "default" else int(sub_vector_size)
-                #range_nan = bool(range_nan)
                 range_nan = range_nan.lower() in ["true"]
+                eval_error = eval_error.lower() in ["true"]
                 bench = bench.lower() in ["true"]
                 if range_nan:
                     input_interval = None
@@ -349,12 +368,37 @@ class RootController(TGController):
                     language=language_object,
                     debug=debug,
                     bench_test_number=100 if bench else None,
+                    compute_max_error=eval_error,
+                    execute_trigger=eval_error,
                     bench_test_range=input_interval,
                     target=target_inst,
                     **fct_extra_args)
+                # function instance object
                 fct_instance = fct_ctor(args=args)
-                source_code = fct_instance.generate_full_source_code()
-                build_cmd = SourceFile.get_build_command("<source_path>", target_inst, bin_name="ml_bench", shared_object=False, link=True, expand_env_var=False)
+                # principal scheme
+                function_only_group = fct_instance.generate_function_list()
+                function_only_group = fct_instance.transform_function_group(function_only_group)
+
+                function_only_code_obj = fct_instance.get_new_main_code_object()
+                function_only_code_obj = fct_instance.generate_code(function_only_code_obj, function_only_group, language=fct_instance.language)
+                # actual source code
+                source_code = function_only_code_obj.get(fct_instance.main_code_generator)
+                with open("source_code.dump.c", "w") as output_stream:
+                    output_stream.write(source_code)
+
+                if eval_error:
+                    fct_instance.main_code_generator.clear_memoization_map()
+                    main_pre_statement, main_statement, function_group = fct_instance.instrument_function_group(function_only_group, enable_subexpr_sharing=True)
+                    EMBEDDING_BINARY = True
+                    fct_instance.main_code_object = fct_instance.get_new_main_code_object()
+                    bench_source_code_obj = fct_instance.generate_output(EMBEDDING_BINARY, main_pre_statement, main_statement, function_group)
+                    execute_result = fct_instance.build_and_execute_source_code(function_group, bench_source_code_obj)
+                    max_error = execute_result["max_error"]
+                # constructing build command
+                build_cmd = SourceFile.get_build_command(
+                                "<source_path>", target_inst,
+                                bin_name="ml_bench", shared_object=False,
+                                link=True, expand_env_var=False)
                 total_time = time.perf_counter() - start_time
             except:
                 self.stats.num_gen_errors += 1
@@ -392,6 +436,8 @@ class RootController(TGController):
             range_hi=range_hi,
             range_nan=range_nan,
             total_time=total_time,
+            max_error=max_error,
+            eval_error=eval_error,
             **self.mwa.option_dict)
 
     @expose(MetalibmWebApp.STAT_TEMPLATE, content_type="text/html")
