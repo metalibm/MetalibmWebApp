@@ -32,6 +32,7 @@ import metalibm_core.utility.version_info as ml_version_info
 from metalibm_core.utility.build_utils import SourceFile
 
 import metalibm_core.utility.log_report as ml_log_report
+from metalibm_core.utility.ml_template import VerboseAction
 
 import metalibm_functions.function_expr as ml_function_expr
 
@@ -41,10 +42,8 @@ based on metalibm {version_num}
 sha1 git: {sha1}({sha1_status})
 """
 
-
-
-
 def custom_get_common_git_comment(localhost, url_getter):
+    """ Generate comment to display at the beginning of the generated code """
     def func():
         git_comment = GIT_COMMENT_TEMPLATE.format(
             localhost=localhost, version_num=ml_version_info.VERSION_NUM,
@@ -92,6 +91,7 @@ class MetalibmWebApp:
     SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
     MAIN_TEMPLATE = os.path.join(SCRIPT_DIR, "main.xhtml")
     STAT_TEMPLATE = os.path.join(SCRIPT_DIR, "stats.xhtml")
+    REPORT_ISSUE_BASE_URL = "https://github.com/metalibm/MetalibmWebApp/issues/new"
 
 
     LANGUAGE_MAP = {
@@ -107,10 +107,14 @@ class MetalibmWebApp:
 
     # dictionnary tag -> url of application examples
     EXAMPLE_MAP = collections.OrderedDict([
-        ("4-way single precision exponential on generic vector target in C", "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=4&sub_vector_size=4&target=vector&language=c"),
-        ("4-way single precision exponential on x86 AVX2 in C", "{localhost}/function?fct_expr=exp(x)&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion"),
-        ("single precision division in C", "{localhost}/function?fct_expr=div(x,y)&io_format=binary32&vector_size=1&sub_vector_size=1&target=generic&language=c&registered_pass_list=basic_legalization%2Cexpand_multi_precision%2Ccheck_processor_support"),
-        ("single precision exponential in LLVM-IR", "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir"),
+        ("4-way single precision exponential on generic vector target in C",
+         "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=4&sub_vector_size=4&target=vector&language=c"),
+        ("4-way single precision exponential on x86 AVX2 in C",
+         "{localhost}/function?fct_expr=exp(x)&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion"),
+        ("single precision division in C",
+         "{localhost}/function?fct_expr=div(x,y)&io_format=binary32&vector_size=1&sub_vector_size=1&target=generic&language=c&registered_pass_list=basic_legalization%2Cexpand_multi_precision%2Ccheck_processor_support"),
+        ("single precision exponential in LLVM-IR",
+         "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir"),
     ])
 
     ALLOWED_PASS_LIST = [
@@ -189,6 +193,7 @@ ml_log_report.Log.exit_on_error = True
 ml_log_report.Log.log_stream = MyLogHandler()
 
 class ML_Statistics:
+    """ Application statistics """
     def __init__(self):
         self.num_generated_function = 0
         self.num_known_errors = 0
@@ -218,16 +223,19 @@ class RootController(TGController):
         self.init_logging()
 
     def init_logging(self):
+        """ Init google cound logging client and logger """
         if not self.disable_log:
             logger_client = logging.Client()
             self.logger = logger_client.logger("mwa-log")
 
     def log_msg(self, msg, tag="info"):
+        """ If logging is enable, log message """
         if not self.logger is None:
             self.logger.log_text("[{}] {}".format(tag, msg))
 
     @expose(MetalibmWebApp.MAIN_TEMPLATE, content_type="text/html")
     def index(self):
+        """ Generate index html """
         return dict(
             code="no code generated",
             build_cmd="no build command available",
@@ -406,7 +414,7 @@ class RootController(TGController):
                 error = "Output: \n{}\nException:\n {}".format(ml_log_report.Log.log_stream.log_output, "".join(traceback.format_exception(*e))).replace('\n', '<br/>')
                 source_code = ""
                 self.log_msg(error, tag="error")
-                report_issue_url = gen_report_issue_url("https://github.com/kalray/metalibm/issues/new",
+                report_issue_url = gen_report_issue_url(MetalibmWebApp.REPORT_ISSUE_BASE_URL,
                     precision=io_format,
                     fct_expr=fct_expr,
                     target=target,
@@ -457,6 +465,10 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8080, help="server connection port")
     parser.add_argument("--version-info", type=str, default="0.0.0", help="version info to display")
     parser.add_argument("--disable-log", action="store_const", const=True, default=False, help="disable logging of information in gcloud")
+    parser.add_argument(
+        "--ml-verbose", dest="verbose_enable", action=VerboseAction,
+        const=True, default=False,
+        help="define Metalibm verbosity level")
     args = parser.parse_args()
 
     # Serve the newly configured web application.
