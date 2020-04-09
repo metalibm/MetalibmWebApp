@@ -81,7 +81,9 @@ ENV PYTHONPATH=/home/metalibm/:/app/local/python3/
 ENV ML_SRC_DIR=/home/metalibm/
 
 # cloning Metalibm web app
-RUN git clone https://github.com/metalibm/MetalibmWepApp.git /home/MetalibmWebApp
+ARG MWA_BRANCH=unknown
+ENV MWA_BRANCH=$MWA_BRANCH
+RUN git clone https://github.com/metalibm/MetalibmWepApp.git -b $MWA_BRANCH /home/MetalibmWebApp 
 RUN pip3 install -r /home/MetalibmWebApp/requirements.txt
 
 EXPOSE 8080
@@ -90,7 +92,7 @@ ENV PATH=/app/local/bin:$PATH
 FROM mwa-base-image AS mwa-debug-image
 
 #CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost", "http://localhost:8080", "--version-info", $METALIBM_BUILD_VERSION]
-CMD python3 /home/MetalibmWebApp/myapp.py --port 8080 --localhost "http://localhost:8080" --version-info "$METALIBM_BUILD_VERSION"
+CMD python3 /home/MetalibmWebApp/myapp.py --port 8080 --localhost "http://localhost:8080" --version-info "$METALIBM_BUILD_VERSION" --disable-log
 
 FROM mwa-base-image AS mwa-release-image
 
