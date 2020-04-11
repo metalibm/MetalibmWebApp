@@ -1,5 +1,5 @@
 TurboGears2
 kajiki
-google-cloud-logging
+# google-cloud-logging
 bigfloat
 matplotlib
