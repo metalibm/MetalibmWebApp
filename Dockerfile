@@ -128,8 +128,14 @@ ENV METALIBM_LUTETIA_BIN=/home/metalibm_lutetia/metalibm
 # cloning Metalibm web app
 ARG MWA_BRANCH=master
 ENV MWA_BRANCH=$MWA_BRANCH
-RUN git clone https://github.com/metalibm/MetalibmWepApp.git -b $MWA_BRANCH /home/MetalibmWebApp 
+#RUN git clone https://github.com/metalibm/MetalibmWepApp.git -b $MWA_BRANCH /home/MetalibmWebApp 
+ADD ./requirements.txt /home/MetalibmWebApp/
 RUN pip3 install -r /home/MetalibmWebApp/requirements.txt
+
+ADD ./myapp.py /home/MetalibmWebApp/
+ADD ./main.xhtml /home/MetalibmWebApp/
+ADD ./stats.xhtml /home/MetalibmWebApp/
+ADD ./public/mwa.js /home/MetalibmWebApp/public/
 
 EXPOSE 8080
 ENV PATH=/app/local/bin:$PATH
@@ -137,7 +143,7 @@ ENV PATH=/app/local/bin:$PATH
 FROM mwa-gp-base-image AS mwa-gp-debug-image
 
 #CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost", "http://localhost:8080", "--version-info", $METALIBM_BUILD_VERSION]
-CMD python3 /home/MetalibmWebApp/myapp.py --port 8080 --localhost "http://localhost:8080" --version-info "$METALIBM_BUILD_VERSION" --disable-log
+#CMD python3 /home/MetalibmWebApp/myapp.py --port 8080 --localhost "http://localhost:8080" --version-info "$METALIBM_BUILD_VERSION" --disable-log
 
 FROM mwa-gp-base-image AS mwa-gp-release-image
 
