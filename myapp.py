@@ -4,8 +4,9 @@ import argparse
 import os
 import collections
 import time
+import subprocess
+import re
 
-from google.cloud import logging
 
 import sollya
 
@@ -185,12 +186,62 @@ class MyLogHandler:
 def gen_report_issue_url(url="https://github.com/kalray/metalibm/issues/new", **kw):
     """ Generated an url to automatically report an error in metalibm
         encountered from the metalibm web app """
-    title="issue with expression {} reported from MWA".format(kw["fct_expr"])
+    title="[genericimplementpoly] issue with expression {} reported from MWA".format(kw["fct_expr"])
     return "{}?title={}&body={}".format(url, title, ", ".join("{}={}".format(k, v) for k, v in kw.items()))
 
 # installing custom log handler for metalibm
 ml_log_report.Log.exit_on_error = True
 ml_log_report.Log.log_stream = MyLogHandler()
+
+
+METALIBM_LUTETIA_CMD_TEMPLATE = """\
+METALIBM_FORCE_LEGACY_IMPLEMENTPOLY={legacy_mode} \
+${{METALIBM_LUTETIA_BIN}} problemdef.sollya"""
+
+PROBLEM_DEF_TEMPLATE ="""
+f = {function_expr};
+dom = {interval};
+target = 2^(-{target});
+maxDegree = {max_degree};
+minWidth = (sup(dom) - inf(dom)) * 1/4096;
+tableIndexWidth = 0;
+minimalReductionRatio = 1000;
+metaSplitMinWidth = (sup(dom) - inf(dom)) * 1/128;
+performExpressionDecomposition = 0;
+adaptWorkingPrecision = false;
+maxDegreeReconstruction = 5;
+"""
+
+def generate_and_bench_fct(function_expr, input_interval, target=24, legacy_mode="no", TIMEOUT=30, max_degree=17):
+    """ build problem definition and execute metalibm-lutetia on it """
+    assert legacy_mode in ["yes", "no"]
+    assert target >= 0
+
+    cmd = METALIBM_LUTETIA_CMD_TEMPLATE.format(legacy_mode=legacy_mode)
+    with open("problemdef.sollya", "w") as f:
+        f.write(PROBLEM_DEF_TEMPLATE.format(
+            function_expr=function_expr,
+            interval=input_interval,
+            target=target,
+            max_degree=17))
+        f.close()
+        try:
+            cmd_result = subprocess.check_output(
+               cmd, shell=True, timeout=TIMEOUT)
+        except subprocess.TimeoutExpired:
+            print("timeout for {} target={}, legacy_mode={}".format(tag, target, legacy_mode))
+
+            return -1.0
+        else:
+            metalibm_result = str(cmd_result, 'utf-8')
+
+            match = re.search("(?P<latency>\d+\.\d+) time units", metalibm_result)
+            if match is None:
+                latency = -1.0
+            else:
+                latency = float(match.group("latency"))
+            print("latency for {} on {} target={}, legacy_mode={} is {}".format(function_expr, input_interval, target, legacy_mode, latency))
+            return latency
 
 class ML_Statistics:
     """ Application statistics """
@@ -225,6 +276,7 @@ class RootController(TGController):
     def init_logging(self):
         """ Init google cound logging client and logger """
         if not self.disable_log:
+            from google.cloud import logging
             logger_client = logging.Client()
             self.logger = logger_client.logger("mwa-log")
 
@@ -238,22 +290,12 @@ class RootController(TGController):
         """ Generate index html """
         return dict(
             code="no code generated",
-            build_cmd="no build command available",
-            precision=self.mwa.format_list[0],
             registered_pass_list=["check_processor_support"],
-            vector_size=1,
-            sub_vector_size="default",
-            debug=False,
-            target="generic",
-            language="c",
             fct_expr="exp(x)",
-            error=None,
-            range_lo="-infty",
-            range_hi="+infty",
-            range_nan=True,
-            eval_error=False,
-            max_error=None,
+            range_lo="-1/2",
+            range_hi="+1/2",
             total_time=None,
+            error=None,
             **self.mwa.option_dict)
 
 
@@ -302,31 +344,25 @@ class RootController(TGController):
                 source_code = "invalid function expression \"{}\"".format(fct_expr)
             elif not all((pass_tag in self.mwa.ALLOWED_PASS_LIST) for pass_tag in registered_pass_list): 
                 source_code = "unknown pass in {}".format([pass_tag for pass_tag in registered_pass_list if not pass_tag in self.mwa.ALLOWED_PASS_LIST])
-                print(source_code)
             # no allowed target list for now
             elif not io_format in self.mwa.format_list:
                 source_code = ("forbidden format {}".format(io_format))
-                print(source_code)
             elif not int(vector_size) in  self.mwa.vector_size_list:
                 source_code = ("forbidden vector_size {}".format(vector_size))
-                print(source_code)
             elif sub_vector_size != "default" and not int(sub_vector_size) in self.mwa.sub_vector_size_list:
                 source_code = ("forbidden sub_vector_size {}".format(sub_vector_size))
-                print(source_code)
             elif not language in self.mwa.LANGUAGE_MAP:
                 source_code = ("forbidden language {}".format(language))
-                print(source_code)
             elif not range_nan.lower() in ["true", "false"]:
                 source_code = ("invalid range NaN  flag {}".format(range_nan))
-                print(source_code)
             elif not bench.lower() in ["true", "false"]:
                 source_code = ("invalid bench flag {}".format(bench))
-                print(source_code)
             elif not eval_error.lower() in ["true", "false"]:
                 source_code = ("invalid eval_error flag {}".format(bench))
-                print(source_code)
             else:
                 no_error = True
+            # display source_code
+            print(source_code)
 
             if not no_error:
                 raise KnownError(source_code)
@@ -346,67 +382,16 @@ class RootController(TGController):
             # clearing logs
             ml_log_report.Log.log_stream.log_output = ""
             try:
-                start_time = time.perf_counter()
-                fct_ctor = ml_function_expr.FunctionExpression
-                arity=ml_function_expr.count_expr_arity(fct_expr)
-                fct_extra_args = {}
-                language_object = self.mwa.LANGUAGE_MAP[language]
-                precision = precision_parser(io_format)
-                vector_size = int(vector_size)
-                sub_vector_size = None if sub_vector_size == "default" else int(sub_vector_size)
-                range_nan = range_nan.lower() in ["true"]
-                eval_error = eval_error.lower() in ["true"]
-                bench = bench.lower() in ["true"]
-                if range_nan:
-                    input_interval = None
-                else:
-                    input_interval = sollya.Interval(sollya.parse(range_lo), sollya.parse(range_hi))
-                debug = bool(debug)
-                target_class = target_parser(target)
-                target_inst = target_class()
-                passes = ["beforecodegen:{}".format(pass_tag) for pass_tag in registered_pass_list if pass_tag in self.mwa.ALLOWED_PASS_LIST]
-                args = fct_ctor.get_default_args(
-                    function_expr_str=[fct_expr],
-                    precision=precision,
-                    input_precisions=(precision,)*arity,
-                    input_intervals=(input_interval,)*arity,
-                    vector_size=vector_size,
-                    sub_vector_size=sub_vector_size,
-                    passes=passes,
-                    language=language_object,
-                    debug=debug,
-                    bench_test_number=100 if bench else None,
-                    compute_max_error=eval_error,
-                    execute_trigger=eval_error,
-                    bench_test_range=input_interval,
-                    target=target_inst,
-                    **fct_extra_args)
-                # function instance object
-                fct_instance = fct_ctor(args=args)
-                # principal scheme
-                function_only_group = fct_instance.generate_function_list()
-                function_only_group = fct_instance.transform_function_group(function_only_group)
+                input_interval = sollya.Interval(sollya.parse(range_lo), sollya.parse(range_hi))
+                target=24
 
-                function_only_code_obj = fct_instance.get_new_main_code_object()
-                function_only_code_obj = fct_instance.generate_code(function_only_code_obj, function_only_group, language=fct_instance.language)
-                # actual source code
-                source_code = function_only_code_obj.get(fct_instance.main_code_generator)
+                start_time = time.perf_counter()
+                passes = ["beforecodegen:{}".format(pass_tag) for pass_tag in registered_pass_list if pass_tag in self.mwa.ALLOWED_PASS_LIST]
+                latency = generate_and_bench_fct(fct_expr, input_interval, target)
+
                 with open("source_code.dump.c", "w") as output_stream:
                     output_stream.write(source_code)
 
-                if eval_error:
-                    fct_instance.main_code_generator.clear_memoization_map()
-                    main_pre_statement, main_statement, function_group = fct_instance.instrument_function_group(function_only_group, enable_subexpr_sharing=True)
-                    EMBEDDING_BINARY = True
-                    fct_instance.main_code_object = fct_instance.get_new_main_code_object()
-                    bench_source_code_obj = fct_instance.generate_output(EMBEDDING_BINARY, main_pre_statement, main_statement, function_group)
-                    execute_result = fct_instance.build_and_execute_source_code(function_group, bench_source_code_obj)
-                    max_error = execute_result["max_error"]
-                # constructing build command
-                build_cmd = SourceFile.get_build_command(
-                                "<source_path>", target_inst,
-                                bin_name="ml_bench", shared_object=False,
-                                link=True, expand_env_var=False)
                 total_time = time.perf_counter() - start_time
             except:
                 self.stats.num_gen_errors += 1
@@ -415,13 +400,8 @@ class RootController(TGController):
                 source_code = ""
                 self.log_msg(error, tag="error")
                 report_issue_url = gen_report_issue_url(MetalibmWebApp.REPORT_ISSUE_BASE_URL,
-                    precision=io_format,
                     fct_expr=fct_expr,
-                    target=target,
-                    vector_size=vector_size,
-                    debug=debug,
-                    language=language,
-                    sub_vector_size=sub_vector_size,
+                    input_interval=input_interval,
                     registered_pass_list=registered_pass_list,
                 )
             else:
@@ -429,23 +409,14 @@ class RootController(TGController):
                 self.log_msg(input_url, tag="info")
         return dict(
             code=source_code,
-            build_cmd=build_cmd,
             precision=io_format,
             fct_expr=fct_expr,
-            target=target,
-            vector_size=vector_size,
-            debug=debug,
-            language=language,
-            sub_vector_size=sub_vector_size,
             registered_pass_list=registered_pass_list,
-            report_issue_url=report_issue_url,
-            error=error,
             range_lo=range_lo,
             range_hi=range_hi,
-            range_nan=range_nan,
             total_time=total_time,
-            max_error=max_error,
-            eval_error=eval_error,
+            report_issue_url=report_issue_url,
+            error=error,
             **self.mwa.option_dict)
 
     @expose(MetalibmWebApp.STAT_TEMPLATE, content_type="text/html")

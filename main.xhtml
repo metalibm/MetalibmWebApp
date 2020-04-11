@@ -156,110 +156,11 @@ var pass_number = ${len(registered_pass_list)};
                     </tr>
                     <tr>
                         <td class="option_label_cell">
-                            <label class="option_label">Format:</label>
-                        </td>
-                        <td>
-                            <select name="io_format" id="io_format" class="option_select">
-                                <py:for each="io_format in format_list">
-                                    <py:if test="precision == io_format">
-                                        <option value="${io_format}" selected="selected">${io_format}</option>
-                                    </py:if><py:else>
-                                        <option value="${io_format}">${io_format}</option>
-                                    </py:else>
-                                </py:for>
-                        </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="option_label_cell">
                             <label class="option_label">Input Range:</label>
                         </td>
                         <td>
                             <input id="range_lo" size="5" name="range_lo" value="${range_lo}"></input>
                             <input id="range_hi" size="5" name="range_hi" value="${range_hi}"></input>
-                            <py:if test="range_nan">
-                                <input type="checkbox" name="range_nan" id="range_nan" value="True" checked="true"/>
-                            </py:if><py:else>
-                                <input type="checkbox" name="range_nan" id="range_nan" value="True"/>
-                            </py:else>
-                            NaN included.
-
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="option_label_cell">
-                            <label class="option_label">Debug:</label>
-                        </td>
-                        <td>
-                            <py:if test="debug">
-                                <input type="checkbox" name="debug" id="debug" value="True" checked="true"/>
-                            </py:if><py:else>
-                                <input type="checkbox" name="debug" id="debug" value="True"/>
-                            </py:else>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="option_label_cell">
-                            <label class="option_label">Vector size:</label>
-                        </td>
-                        <td>
-                            <select name="vector_size" id="vector_size" class="option_select">
-                                <py:for each="possible_vector_size in vector_size_list">
-                                    <py:if test="possible_vector_size == vector_size">
-                                        <option value="${possible_vector_size}" selected="selected">${possible_vector_size}</option>
-                                    </py:if><py:else>
-                                        <option value="${possible_vector_size}">${possible_vector_size}</option>
-                                    </py:else>
-                                </py:for>
-                        </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="option_label_cell">
-                            <label class="option_label">Sub-Vector size:</label>
-                        </td>
-                        <td>
-                            <select name="sub_vector_size" id="sub_vector_size" class="option_select">
-                                <py:for each="possible_sub_vector_size in sub_vector_size_list">
-                                    <py:if test="possible_sub_vector_size == sub_vector_size">
-                                        <option selected="selected" value="${possible_sub_vector_size}"> ${possible_sub_vector_size}</option>
-                                    </py:if><py:else>
-                                        <option value="${possible_sub_vector_size}">${possible_sub_vector_size or 'default'}</option>
-                                    </py:else>
-                                </py:for>
-                        </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="option_label_cell">
-                            <label class="option_label">Target:</label>
-                        </td>
-                        <td>
-                            <select name="target" id="target" class="option_select">
-                                <py:for each="possible_target in target_list">
-                                    <py:if test="possible_target == target">
-                                        <option value="${possible_target}" selected="selected">${possible_target}</option>
-                                    </py:if><py:else>
-                                        <option value="${possible_target}">${possible_target}</option>
-                                    </py:else>
-                                </py:for>
-                        </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="option_label_cell">
-                            <label class="option_label">Language:</label>
-                        </td>
-                        <td>
-                            <select name="language" id="language" class="option_select">
-                                <py:for each="possible_language in language_list">
-                                    <py:if test="possible_language == language">
-                                        <option value="${possible_language}" selected="selected">${possible_language}</option>
-                                    </py:if><py:else>
-                                        <option value="${possible_language}">${possible_language}</option>
-                                    </py:else>
-                                </py:for>
-                        </select>
                         </td>
                     </tr>
                     <tr>
@@ -299,45 +200,6 @@ var pass_number = ${len(registered_pass_list)};
                         </td>
                     </tr>
                     <tr>
-                        <td class="option_label_cell" style="text-align: center;" colspan="2">
-                            <label class="option_label">Pre-configured flows</label><br/>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <p style="text-align: center; font-size: 15px; font-weight: bold; color: red;"> Will clear every other registered passes </p>
-                        </td>
-                        <td>
-                            <select style="width: 300px" id="preconf_flow">
-                                <py:for each="flow in sorted(preconf_flow)">
-                                        <option value="${flow}">${preconf_flow[flow]['title']}</option>
-                                </py:for>
-                            </select>
-                            <script>
-                                ${literal(preconf_flow_script)}
-                            </script>
-                            
-                            <br/>
-                            <center>
-                                <input type="button" value="Clear and Add" onclick="add_preconf_flow()"/>
-                            </center>
-
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="option_label_cell">
-                            <label class="option_label"> Evaluate error: </label>
-                        </td>
-                        <td> 
-                            <py:if test="eval_error">
-                                <input type="checkbox" name="eval_error" checked="true" value="True"/>
-                            </py:if><py:else>
-                                <input type="checkbox" name="eval_error" value="True"/>
-                            </py:else>
-                                
-                        </td>
-                    </tr>
-                    <tr>
                         <td colspan="2">
                             <br/>
                             <div style="text-align:center;">
@@ -361,25 +223,11 @@ ${code}
                     </code>
                 </pre>
 
-                    <p>
-                    <py:if test="not max_error is None">
-                        Evaluated error: ${"{:.2f}".format(float(max_error))} ulp(s)
-                    </py:if>
-                    <br/>
-                        <b> Note: </b> This error was evaluated on random inputs from a subset of the input range.
-                            It is not a certificate for implementation error. The actual error may
-                            be much worse than this metric.
-                    </p>
                     <!-- The button used to copy the text -->
 					<input type="hidden" id="sourceCode" value="${code}"/>
                     <center>
                         <button onclick="copyCodeToClipboard()">Copy source code to clipboard</button>
                     </center>
-                        <b> Build Command: </b> <br/> 
-                        
-                    <code class="bash" style="overflow-y: scroll;height:100px; width: 500px; overflow-x: scroll;" id="rawSourceCode">
-                        ${build_cmd} 
-                    </code>
               </td>
             </py:if><py:else>
                 <td>
@@ -396,41 +244,19 @@ ${code}
 			<td colspan="2" width="1000px">
                 <b><u>Help:</u></b>
 
-                <p> <b>Function expression</b> is the function expression to be generated. x and y are valid input varibles. The 4 basic operations (+, -, / and *) are supported. The following elementary functions are supported: exp, log, log2, log10, exp2, expm1, sqrt, cbrt, cos, sin, cosh, sinh, tanh.</p>
-
-                <p> <b>Format </b> is the input and output format.</p>
-
-                <p> <b>Input range</b> is the input interval. By adding the pass <i> numerical_simplification</i> you can enable Metalibm to optimize the function using this range information. If <i>NaN included</i> is selected the range is forced to the full range of floating-point values in the given format. </p>
-
-                <p> <b>Debug </b> triggers the insertion of various dynamic value print in the source code.</p>
-                <p> <b>Vector size </b> is the input and output vector size. 1 corresponds to a scalar function. </p>
-                <p> <b>Sub vector size </b> indicates which size of vector must be used to implement the vector function. Metalibm will generate replicated implementation for this sub-vector size and aggregate them to generate the full vector size implementation. </p>
-                <p> <b>Target </b> indicates which backend must be used for code generation. </p>
-                <p> <b>Language </b> indicates the output language. </p>
-
-                <p> <b>Pass list</b> is the list of optimization pass executed on the intermediate representation. Select a new pass in the <b> Add a new pass</b> menu and click "Add" to insert it at the end of the optimization pipeline. You can re-order passes by dragging and dropping them. You can delete a pass by dragging it and dropping outside of the pass list box. 
-                </p>
-                <p> <b> Evaluate error</b> triggers the comparison of the generated source against expected value on random inputs. The relative error is reported here (in terms of ulp(s) for a suitable definition of ulp).</p>
-                <p>
                     <b><u>Some examples:</u></b>
                     <ul>
                         <py:for each="example_tag in example_map">
                                 <li><a href="${example_map[example_tag]}">${example_tag}</a></li>
                         </py:for>
                     </ul>
-                </p>
-                <p> <b>To execute the generated source code:</b> </p>
-
 			</td>
 		</tr>
 		<tr>
 			<td colspan="2" width="1000px">
                 <b><u>Changelog:</u></b>
                     <ul>
-                        <li> New interface to describe a function expression </li>
-                        <li> Each target defines a default optimization pipeline (no need to add required passes anymore).</li>
-                        <li> Adding default sub-vector size option to let the target chose the sub-vector size value. </li>
-                        <li> Adding new optimization pass <b>evaluate_range</b> to evaluate nodes' intervals.</li>
+                        <li></li>
                     </ul>
 			</td>
 		</tr>
