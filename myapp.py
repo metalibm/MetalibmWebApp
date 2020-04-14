@@ -30,7 +30,7 @@ import metalibm_core.utility.log_report as ml_log_report
 import metalibm_core.code_generation.code_configuration as ml_code_configuration
 from metalibm_core.code_generation.code_utility import insert_line_break
 import metalibm_core.utility.version_info as ml_version_info
-from metalibm_core.utility.build_utils import SourceFile
+from metalibm_core.utility.build_utils import SourceFile, get_cmd_stdout
 
 import metalibm_core.utility.log_report as ml_log_report
 from metalibm_core.utility.ml_template import VerboseAction
@@ -42,6 +42,8 @@ generated using Metalibm Web App ({localhost})
 based on metalibm {version_num}
 sha1 git: {sha1}({sha1_status})
 """
+
+
 
 def custom_get_common_git_comment(localhost, url_getter):
     """ Generate comment to display at the beginning of the generated code """
@@ -194,9 +196,11 @@ ml_log_report.Log.exit_on_error = True
 ml_log_report.Log.log_stream = MyLogHandler()
 
 
+#METALIBM_LUTETIA_CMD_TEMPLATE = """\
+#METALIBM_FORCE_LEGACY_IMPLEMENTPOLY={legacy_mode} \
+#${{METALIBM_LUTETIA_BIN}} problemdef.sollya"""
 METALIBM_LUTETIA_CMD_TEMPLATE = """\
-METALIBM_FORCE_LEGACY_IMPLEMENTPOLY={legacy_mode} \
-${{METALIBM_LUTETIA_BIN}} problemdef.sollya"""
+${METALIBM_LUTETIA_BIN} problemdef.sollya"""
 
 PROBLEM_DEF_TEMPLATE ="""
 f = {function_expr};
@@ -212,6 +216,16 @@ adaptWorkingPrecision = false;
 maxDegreeReconstruction = 5;
 """
 
+class MetalibmLutetiaHandle:
+    def __init__(metalibm_lutetia_dir):
+        """ Initialize metalibm lutetia and returns a problemDef executor """
+        sollya.parse(f"(proc () {{ metalibmdir=\"{metalibm_lutetia_dir}\"; }})()")
+        sollya.execute(os.path.join(metalibm_lutetia_dir, "metalibm-lib.sollya"))
+        self.handle = sollya.parse("metalibm_implement")
+
+    def implement(problem_def_dict):
+        return self.handle(problem_def_dict)
+
 def generate_and_bench_fct(function_expr, input_interval, target=24, legacy_mode="no", TIMEOUT=30, max_degree=17):
     """ build problem definition and execute metalibm-lutetia on it """
     assert legacy_mode in ["yes", "no"]
@@ -226,8 +240,17 @@ def generate_and_bench_fct(function_expr, input_interval, target=24, legacy_mode
             max_degree=17))
         f.close()
         try:
-            cmd_result = subprocess.check_output(
-               cmd, shell=True, timeout=TIMEOUT)
+            #cmd_result = subprocess.check_output( cmd, shell=True, timeout=TIMEOUT)
+            # FIXME: timeout is ignored
+            # cmd_result, stdout_content = get_cmd_stdout(cmd)
+            local_env = os.environ.copy()
+            local_env["METALIBM_FORCE_LEGACY_IMPLEMENTPOLY"] = legacy_mode
+            cmd_process = subprocess.Popen(
+                filter(None, cmd.split(" ")),
+                stdout=subprocess.PIPE, env=local_env)
+            cmd_result = cmd_process.wait()
+            stdout_content = cmd_process.stdout.read()
+            print("stdout: {}".format(stdout_content))
         except subprocess.TimeoutExpired:
             print("timeout for {} target={}, legacy_mode={}".format(tag, target, legacy_mode))
 
@@ -439,6 +462,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ml-verbose", dest="verbose_enable", action=VerboseAction,
         const=True, default=False,
+        help="define Metalibm verbosity level")
+    parser.add_argument(
+        "--ml-lutetia-bin", dest="metalibm_lutetia_bin",
+        const=True, default=None,
         help="define Metalibm verbosity level")
     args = parser.parse_args()
 
