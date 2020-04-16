@@ -6,6 +6,7 @@ import collections
 import time
 import subprocess
 import re
+import io
 
 
 import sollya
@@ -216,55 +217,42 @@ adaptWorkingPrecision = false;
 maxDegreeReconstruction = 5;
 """
 
-class MetalibmLutetiaHandle:
-    def __init__(metalibm_lutetia_dir):
-        """ Initialize metalibm lutetia and returns a problemDef executor """
-        sollya.parse(f"(proc () {{ metalibmdir=\"{metalibm_lutetia_dir}\"; }})()")
-        sollya.execute(os.path.join(metalibm_lutetia_dir, "metalibm-lib.sollya"))
-        self.handle = sollya.parse("metalibm_implement")
+sollya.settings.verbosity = sollya.off
 
-    def implement(problem_def_dict):
+class MetalibmLutetiaLib:
+    def __init__(self, metalibm_lutetia_dir):
+        """ Initialize metalibm lutetia and returns a problemDef executor """
+        # setting metalibmdir
+        result = sollya.parse(f"(proc () {{ metalibmdir=\"{metalibm_lutetia_dir}\"; }})()")
+        print("setting metalibmdir: {}".format(result))
+        result = sollya.execute(os.path.join(metalibm_lutetia_dir, "metalibm-lib.sollya"))
+        print("executing metalibm-lib.sollya: {}".format(result))
+        self.handle = sollya.parse("metalibm_implement")
+        print("self.handle: {}".format(self.handle))
+
+    def implement(self, problem_def_dict):
         return self.handle(problem_def_dict)
 
-def generate_and_bench_fct(function_expr, input_interval, target=24, legacy_mode="no", TIMEOUT=30, max_degree=17):
+def generate_and_bench_fct(ml_lut_lib, function_expr, input_interval, target=2**-24, legacy_mode="no", TIMEOUT=30, max_degree=17):
     """ build problem definition and execute metalibm-lutetia on it """
     assert legacy_mode in ["yes", "no"]
     assert target >= 0
 
-    cmd = METALIBM_LUTETIA_CMD_TEMPLATE.format(legacy_mode=legacy_mode)
-    with open("problemdef.sollya", "w") as f:
-        f.write(PROBLEM_DEF_TEMPLATE.format(
-            function_expr=function_expr,
-            interval=input_interval,
-            target=target,
-            max_degree=17))
-        f.close()
-        try:
-            #cmd_result = subprocess.check_output( cmd, shell=True, timeout=TIMEOUT)
-            # FIXME: timeout is ignored
-            # cmd_result, stdout_content = get_cmd_stdout(cmd)
-            local_env = os.environ.copy()
-            local_env["METALIBM_FORCE_LEGACY_IMPLEMENTPOLY"] = legacy_mode
-            cmd_process = subprocess.Popen(
-                filter(None, cmd.split(" ")),
-                stdout=subprocess.PIPE, env=local_env)
-            cmd_result = cmd_process.wait()
-            stdout_content = cmd_process.stdout.read()
-            print("stdout: {}".format(stdout_content))
-        except subprocess.TimeoutExpired:
-            print("timeout for {} target={}, legacy_mode={}".format(tag, target, legacy_mode))
+    try:
+        problem_def = {
+            "f": function_expr,
+            "target": target,
+        }
+        print("problem_def: {}".format(problem_def))
+        ml_lut_result = dict(ml_lut_lib.implement(problem_def))
+        print("ml_lut_result: {}".format(ml_lut_result))
 
-            return -1.0
-        else:
-            metalibm_result = str(cmd_result, 'utf-8')
-
-            match = re.search("(?P<latency>\d+\.\d+) time units", metalibm_result)
-            if match is None:
-                latency = -1.0
-            else:
-                latency = float(match.group("latency"))
-            print("latency for {} on {} target={}, legacy_mode={} is {}".format(function_expr, input_interval, target, legacy_mode, latency))
-            return latency
+        print(f"{ml_lut_result['okay']}, {ml_lut_result['implementationFile']}")
+        return ml_lut_result
+    except:
+        print("failed to generate implementation")
+        raise
+        return None
 
 class ML_Statistics:
     """ Application statistics """
@@ -288,13 +276,14 @@ class ML_Statistics:
 
 # RootController of our web app, in charge of serving content for /
 class RootController(TGController):
-    def __init__(self, localhost, version_info, disable_log=False):
+    def __init__(self, localhost, version_info, metalibm_lutetia_dir=None, disable_log=False):
         super().__init__()
         self.mwa = MetalibmWebApp(localhost, version_info)
         self.stats = ML_Statistics()
         self.disable_log = disable_log
         self.logger = None
         self.init_logging()
+        self.ml_lut_lib = MetalibmLutetiaLib(metalibm_lutetia_dir)
 
     def init_logging(self):
         """ Init google cound logging client and logger """
@@ -406,14 +395,17 @@ class RootController(TGController):
             ml_log_report.Log.log_stream.log_output = ""
             try:
                 input_interval = sollya.Interval(sollya.parse(range_lo), sollya.parse(range_hi))
-                target=24
+                target=2**-24
+                fct_expr_obj = sollya.parse(fct_expr)
 
                 start_time = time.perf_counter()
                 passes = ["beforecodegen:{}".format(pass_tag) for pass_tag in registered_pass_list if pass_tag in self.mwa.ALLOWED_PASS_LIST]
-                latency = generate_and_bench_fct(fct_expr, input_interval, target)
+                ml_lut_result = generate_and_bench_fct(self.ml_lut_lib, fct_expr_obj, input_interval, target)
+                source_filename = str(ml_lut_result["implementationFile"])
 
-                with open("source_code.dump.c", "w") as output_stream:
-                    output_stream.write(source_code)
+                #with open(source_filename, "r") as source_file:
+                with io.open(source_filename, mode="r", encoding="utf-8") as source_file:
+                    source_code = source_file.read()
 
                 total_time = time.perf_counter() - start_time
             except:
@@ -428,6 +420,7 @@ class RootController(TGController):
                     registered_pass_list=registered_pass_list,
                 )
             else:
+                print("generation successful")
                 self.stats.num_generated_function += 1
                 self.log_msg(input_url, tag="info")
         return dict(
@@ -464,9 +457,9 @@ if __name__ == "__main__":
         const=True, default=False,
         help="define Metalibm verbosity level")
     parser.add_argument(
-        "--ml-lutetia-bin", dest="metalibm_lutetia_bin",
-        const=True, default=None,
-        help="define Metalibm verbosity level")
+        "--ml-lutetia-dir", dest="metalibm_lutetia_dir",
+        default=None,
+        help="define Metalibm Lutetia directory")
     args = parser.parse_args()
 
     # Serve the newly configured web application.
@@ -477,7 +470,7 @@ if __name__ == "__main__":
     config = MinimalApplicationConfigurator()
     config.register(StaticsConfigurationComponent)
     config.update_blueprint({
-        'root_controller': RootController(LOCALHOST, VERSION_INFO, disable_log=args.disable_log),
+        'root_controller': RootController(LOCALHOST, VERSION_INFO, metalibm_lutetia_dir=args.metalibm_lutetia_dir, disable_log=args.disable_log),
         'renderers': ['kajiki'],
         'templating.kajiki.template_extension': '.xhtml',
         'templating.kajiki.force_mode': 'html5',
