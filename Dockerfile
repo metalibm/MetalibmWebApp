@@ -115,10 +115,11 @@ RUN make all
 
 # moving generic implementpoly repo
 ADD ./tools/*.py /home/genericimplementpoly/tools/
+ADD ./tools/*.sol /home/genericimplementpoly/tools/
 
 # setting env for experiment execution
 WORKDIR /home/
-ENV PYTHONPATH=/home/metalibm/:/app/local/python3/
+ENV PYTHONPATH=/home/metalibm/:/home/metalibm_lutetia/:/home/genericimplementpoly/tools/:/app/local/python3/
 ENV ML_SRC_DIR=/home/metalibm/
 
 ENV METALIBM_CFLAGS="-mfma -mavx2 -I/home/metalibm/metalibm_core "
@@ -143,7 +144,7 @@ ENV PATH=/app/local/bin:$PATH
 FROM mwa-gp-base-image AS mwa-gp-debug-image
 
 #CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost", "http://localhost:8080", "--version-info", $METALIBM_BUILD_VERSION]
-#CMD python3 /home/MetalibmWebApp/myapp.py --port 8080 --localhost "http://localhost:8080" --version-info "$METALIBM_BUILD_VERSION" --disable-log
+CMD python3 /home/MetalibmWebApp/myapp.py --port 8080 --localhost "http://localhost:8080" --version-info "$METALIBM_BUILD_VERSION" --disable-log --ml-lutetia-dir /home/metalibm_lutetia
 
 FROM mwa-gp-base-image AS mwa-gp-release-image
 
