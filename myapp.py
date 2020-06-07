@@ -65,22 +65,6 @@ def custom_get_common_git_comment(localhost, url_getter):
 
 
 PRE_CONFIGURE_FLOWS = {
-    #"llvm_flow": {
-    #    "title": "LLVM required passes",
-    #    "pass_list": ["gen_basic_block", "basic_block_simplification", "ssa_translation"],
-    #},
-    "vector_flow": {
-        "title": "Vector recommended passes",
-        "pass_list": ["vector_mask_test_legalization", "virtual_vector_bool_legalization"],
-    },
-    "x86_sse_flow": {
-        "title": "x86-SSE recommended passes",
-        "pass_list": ["m128_promotion"],
-    },
-    "x86_avx_flow": {
-        "title": "x86-AVX recommended passes",
-        "pass_list": ["m128_promotion", "m256_promotion"],
-    },
 }
 
 preconf_flow_script= kajiki.TextTemplate("""\
@@ -111,61 +95,21 @@ class MetalibmWebApp:
 
     # dictionnary tag -> url of application examples
     EXAMPLE_MAP = collections.OrderedDict([
-        ("4-way single precision exponential on generic vector target in C",
-         "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=4&sub_vector_size=4&target=vector&language=c"),
-        ("4-way single precision exponential on x86 AVX2 in C",
-         "{localhost}/function?fct_expr=exp(x)&io_format=binary64&vector_size=4&sub_vector_size=4&target=x86_avx2&language=c&registered_pass_list=virtual_vector_bool_legalization%2Cvector_mask_test_legalization%2Cm128_promotion%2Cm256_promotion"),
-        ("single precision division in C",
-         "{localhost}/function?fct_expr=div(x,y)&io_format=binary32&vector_size=1&sub_vector_size=1&target=generic&language=c&registered_pass_list=basic_legalization%2Cexpand_multi_precision%2Ccheck_processor_support"),
-        ("single precision exponential in LLVM-IR",
-         "{localhost}/function?fct_expr=exp(x)&io_format=binary32&vector_size=1&sub_vector_size=1&target=llvm&language=ll-ir"),
+        ("single precision exponential accuracte to 20 bits",
+         "{localhost}/function?fct_expr=exp(x)&accuracy_target_bits=20&io_format=binary32"),
     ])
 
     ALLOWED_PASS_LIST = [
-        "m128_promotion",
-        "m256_promotion",
-        "basic_block_simplification",
-        "basic_legalization",
-        "check_precision",
-        "check_processor_support",
-        "check_target_support",
-        "dump",
-        "expand_multi_precision",
-        "evaluate_range",
-        "fuse_fma",
-        "gen_basic_block",
-        "instantiate_abstract_prec",
-        "instantiate_prec",
-        "m128_promotion",
-        "m256_promotion",
-        "numerical_simplification",
-        "silence_fp_ops",
-        "ssa_translation",
-        "sub_expr_sharing",
-        "tag_node",
-        "vector_mask_test_legalization",
-        "vector_promotion",
-        "virtual_vector_bool_legalization",
-        # "check_generic",
-        #"critical_path_eval",
-        #"dump_with_stages",
-        #"simplify_rtl",
-        #"size_datapath",
-        #"unify_pipeline_stages",
-        #"quit",
-        #"rtl_legalize",
     ]
 
     def __init__(self, localhost, version_info):
         self.LOCALHOST = localhost
-        available_pass_list = [tag for tag in Pass.get_pass_tag_list() if tag in self.ALLOWED_PASS_LIST]
 
         self.option_dict = {
             "format_list": self.format_list,
             "vector_size_list": self.vector_size_list,
             "sub_vector_size_list": self.sub_vector_size_list,
             "target_list": sorted(list(target_map.keys())),
-            "available_pass_list": sorted(available_pass_list),
             "language_list": list(self.LANGUAGE_MAP.keys()),
             "example_map": {k: self.encode_url(v) for k, v in self.EXAMPLE_MAP.items()},
             "localhost": self.LOCALHOST,
@@ -196,26 +140,6 @@ def gen_report_issue_url(url="https://github.com/kalray/metalibm/issues/new", **
 ml_log_report.Log.exit_on_error = True
 ml_log_report.Log.log_stream = MyLogHandler()
 
-
-#METALIBM_LUTETIA_CMD_TEMPLATE = """\
-#METALIBM_FORCE_LEGACY_IMPLEMENTPOLY={legacy_mode} \
-#${{METALIBM_LUTETIA_BIN}} problemdef.sollya"""
-METALIBM_LUTETIA_CMD_TEMPLATE = """\
-${METALIBM_LUTETIA_BIN} problemdef.sollya"""
-
-PROBLEM_DEF_TEMPLATE ="""
-f = {function_expr};
-dom = {interval};
-target = 2^(-{target});
-maxDegree = {max_degree};
-minWidth = (sup(dom) - inf(dom)) * 1/4096;
-tableIndexWidth = 0;
-minimalReductionRatio = 1000;
-metaSplitMinWidth = (sup(dom) - inf(dom)) * 1/128;
-performExpressionDecomposition = 0;
-adaptWorkingPrecision = false;
-maxDegreeReconstruction = 5;
-"""
 
 sollya.settings.verbosity = sollya.off
 
@@ -302,10 +226,10 @@ class RootController(TGController):
         """ Generate index html """
         return dict(
             code="no code generated",
-            registered_pass_list=["check_processor_support"],
             fct_expr="exp(x)",
             range_lo="-1/2",
             range_hi="+1/2",
+            accuracy_target_bits="24",
             total_time=None,
             error=None,
             **self.mwa.option_dict)
@@ -313,7 +237,8 @@ class RootController(TGController):
 
     @expose(MetalibmWebApp.MAIN_TEMPLATE, content_type="text/html")
     def function(self, fct_expr="exp(x)", io_format="binary32", vector_size=1,
-                 target="generic", registered_pass_list="",
+                 accuracy_target_bits=24,
+                 target="generic",
                  sub_vector_size="default", debug=False, language="c",
                  range_nan="false", range_lo="-infty", range_hi="+infty",
                  bench="false", eval_error="false"):
@@ -321,12 +246,12 @@ class RootController(TGController):
         total_time = None
         input_url = ("{localhost}/function?fct_expr={fct_expr}&io_format={io_format}&" +\
                     "vector_size={vector_size}&target={target}&" +\
-                    "registered_pass_list={registered_pass_list}&" + \
+                    "accuracy_target_bits={accuracy_target_bits}&" + \
                     "debug={debug}&language={language}&eval_error={eval_error}").format(
             localhost=self.mwa.LOCALHOST,
             fct_expr=fct_expr, io_format=io_format,
             vector_size=vector_size, target=target,
-            registered_pass_list=registered_pass_list,
+            accuracy_target_bits=accuracy_target_bits,
             sub_vector_size=sub_vector_size, debug=debug,
             language=language,
             eval_error=eval_error)
@@ -334,8 +259,6 @@ class RootController(TGController):
         # generate git commentary (indicating which version of metalibm was
         # used to generate code)
         ml_code_configuration.GLOBAL_GET_GIT_COMMENT = custom_get_common_git_comment(self.mwa.LOCALHOST, lambda : input_url)
-
-        registered_pass_list = [tag for tag in registered_pass_list.split(",") if tag != ""]
 
         error = None
         source_code = ""
@@ -354,9 +277,6 @@ class RootController(TGController):
             no_error = False
             if not ml_function_expr.check_fct_expr(fct_expr):
                 source_code = "invalid function expression \"{}\"".format(fct_expr)
-            elif not all((pass_tag in self.mwa.ALLOWED_PASS_LIST) for pass_tag in registered_pass_list): 
-                source_code = "unknown pass in {}".format([pass_tag for pass_tag in registered_pass_list if not pass_tag in self.mwa.ALLOWED_PASS_LIST])
-            # no allowed target list for now
             elif not io_format in self.mwa.format_list:
                 source_code = ("forbidden format {}".format(io_format))
             elif not int(vector_size) in  self.mwa.vector_size_list:
@@ -395,12 +315,16 @@ class RootController(TGController):
             ml_log_report.Log.log_stream.log_output = ""
             try:
                 input_interval = sollya.Interval(sollya.parse(range_lo), sollya.parse(range_hi))
-                target=2**-24
+                # TODO/FIXME: should check first that accuracy_target_bits is
+                #             a str convertible to an int
+                accuracy_target = 2**-int(accuracy_target_bits)
                 fct_expr_obj = sollya.parse(fct_expr)
 
                 start_time = time.perf_counter()
-                passes = ["beforecodegen:{}".format(pass_tag) for pass_tag in registered_pass_list if pass_tag in self.mwa.ALLOWED_PASS_LIST]
-                ml_lut_result = generate_and_bench_fct(self.ml_lut_lib, fct_expr_obj, input_interval, target)
+                ml_lut_result = generate_and_bench_fct(self.ml_lut_lib,
+                                                       fct_expr_obj,
+                                                       input_interval,
+                                                       accuracy_target)
                 source_filename = str(ml_lut_result["implementationFile"])
 
                 #with open(source_filename, "r") as source_file:
@@ -417,7 +341,7 @@ class RootController(TGController):
                 report_issue_url = gen_report_issue_url(MetalibmWebApp.REPORT_ISSUE_BASE_URL,
                     fct_expr=fct_expr,
                     input_interval=input_interval,
-                    registered_pass_list=registered_pass_list,
+                    accuracy_target_bits=accuracy_target_bits,
                 )
             else:
                 print("generation successful")
@@ -427,10 +351,10 @@ class RootController(TGController):
             code=source_code,
             precision=io_format,
             fct_expr=fct_expr,
-            registered_pass_list=registered_pass_list,
             range_lo=range_lo,
             range_hi=range_hi,
             total_time=total_time,
+            accuracy_target_bits=accuracy_target_bits,
             report_issue_url=report_issue_url,
             error=error,
             **self.mwa.option_dict)
