@@ -64,13 +64,14 @@ ENV METALIBM_BRANCH=$METALIBM_BRANCH
 # METALIBM_BUILD_VERSION will break docker cache here
 ARG METALIBM_BUILD_VERSION=unknown
 ENV METALIBM_BUILD_VERSION=$METALIBM_BUILD_VERSION
+ARG METALIBM_REPO=https://github.com/kalray/metalibm.git
+ENV METALIBM_REPO=$METALIBM_REPO
 WORKDIR /home/
-RUN git clone https://github.com/kalray/metalibm.git -b $METALIBM_BRANCH
+RUN git clone $METALIBM_REPO -b $METALIBM_BRANCH
 WORKDIR /home/metalibm/
 
 ENV LD_LIBRARY_PATH=/app/local/lib/
 ENV PYTHONPATH=/app/local/python3/
-
 
 
 FROM mwa_metalibm_cache AS mwa-base-image
@@ -81,10 +82,15 @@ ENV PYTHONPATH=/home/metalibm/:/app/local/python3/
 ENV ML_SRC_DIR=/home/metalibm/
 
 # cloning Metalibm web app
+ARG MWA_REPO=https://github.com/metalibm/MetalibmWepApp.git
+ENV MWA_REPO=$MWA_REPO
 ARG MWA_BRANCH=unknown
 ENV MWA_BRANCH=$MWA_BRANCH
-RUN git clone https://github.com/metalibm/MetalibmWepApp.git -b $MWA_BRANCH /home/MetalibmWebApp 
+RUN git clone $MWA_REPO -b $MWA_BRANCH /home/MetalibmWebApp
 RUN pip3 install -r /home/MetalibmWebApp/requirements.txt
+
+# installing ASMDE (metalibm dependency) directly
+RUN pip3 install git+https://github.com/nibrunie/asmde
 
 EXPOSE 8080
 ENV PATH=/app/local/bin:$PATH
