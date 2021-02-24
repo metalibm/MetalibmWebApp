@@ -1,6 +1,7 @@
 # Build Parameters which can be specified via `--build-arg PARAM=VALUE`
 # METALIBM_BRANCH:        branch for metalibm clone
 # METALIBM_BUILD_VERSION: description of this app build version
+# MWA_REPO:               repository for metalibm web app code
 # MWA_BRANCH:             branch for metalibm web app clone
 # ML_CUSTOM_TARGET_DIR:   directory where custom metalibm targets can be found
 # HOST:                   server url
@@ -23,8 +24,9 @@ WORKDIR  /home/
 
 # sollya weekly release (which implement sollya_lib_obj_is_external_data
 # contrary to sollya 7.0 release)
-RUN wget http://sollya.gforge.inria.fr/sollya-weekly-09-23-2019.tar.gz && tar -xzf sollya-weekly-09-23-2019.tar.gz
-WORKDIR /home/sollya-weekly-09-23-2019/
+#RUN wget http://sollya.gforge.inria.fr/sollya-weekly-09-23-2019.tar.gz && tar -xzf sollya-weekly-09-23-2019.tar.gz
+RUN wget http://sollya.gforge.inria.fr/sollya-weekly-07-06-2020.tar.gz && tar -xzf sollya-weekly*
+WORKDIR /home/sollya-weekly-07-06-2020/
 RUN mkdir -p /app/local/python3/ && ./configure --prefix /app/local && make -j8 && make install
 
 
@@ -40,12 +42,14 @@ RUN git clone https://gitlab.com/metalibm-dev/pythonsollya /home/new_pythonsolly
 
 # RUN apt-get install -y python3-setuptools libpython3-dev
 
+RUN apt-get install python3-six
+RUN pip3 install bigfloat
+
 # for python 3
 WORKDIR /home/new_pythonsollya/
 RUN make SOLLYA_DIR=/app/local/ PREFIX=/app/local/ INSTALL_OPTIONS="-t /app/local/python3/" PYTHON=python3 PIP=pip3 install
 
 # checking pythonsolya install
-RUN apt-get install python3-six
 RUN LD_LIBRARY_PATH="/app/local/lib" python3 -c "import sollya"
 
 # installing gappa
@@ -80,6 +84,13 @@ WORKDIR /home/metalibm/
 ENV LD_LIBRARY_PATH=/app/local/lib/
 ENV PYTHONPATH=/app/local/python3/
 
+# FIXME installing metalibm python dependency manually to avoid re-installing pythonsollya
+RUN pip3 install git+https://github.com/nibrunie/asmde
+RUN pip3 install matplotlib
+RUN apt install -y python3-yaml
+
+ENV LD_LIBRARY_PATH=/app/local/lib/
+ENV PYTHONPATH=/app/local/python3/
 
 FROM mwa_metalibm_cache AS mwa-base-image
 
