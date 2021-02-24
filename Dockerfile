@@ -1,3 +1,10 @@
+# Build Parameters which can be specified via `--build-arg PARAM=VALUE`
+# METALIBM_BRANCH:        branch for metalibm clone
+# METALIBM_BUILD_VERSION: description of this app build version
+# MWA_BRANCH:             branch for metalibm web app clone
+# ML_CUSTOM_TARGET_DIR:   directory where custom metalibm targets can be found
+# HOST:                   server url
+#
 FROM ubuntu:18.04 AS mwa_base_deps
 
 RUN apt-get update
