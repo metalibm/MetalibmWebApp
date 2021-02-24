@@ -81,8 +81,11 @@ WORKDIR /home/
 RUN git clone $METALIBM_REPO -b $METALIBM_BRANCH
 WORKDIR /home/metalibm/
 
-ENV LD_LIBRARY_PATH=/app/local/lib/
-ENV PYTHONPATH=/app/local/python3/
+# installing custom targets
+ARG ML_CUSTOM_TARGETS_DIR=
+ENV ML_CUSTOM_TARGETS_DIR=$ML_CUSTOM_TARGETS_DIR
+COPY $ML_CUSTOM_TARGETS_DIR /home/metalibm/metalibm_core/targets/proprietary/
+
 
 # FIXME installing metalibm python dependency manually to avoid re-installing pythonsollya
 RUN pip3 install git+https://github.com/nibrunie/asmde
