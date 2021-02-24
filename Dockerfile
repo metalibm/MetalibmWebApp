@@ -115,8 +115,11 @@ ENV PATH=/app/local/bin:$PATH
 
 FROM mwa-base-image AS mwa-debug-image
 
-#CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost", "http://localhost:8080", "--version-info", $METALIBM_BUILD_VERSION]
-CMD python3 /home/MetalibmWebApp/myapp.py --port 8080 --localhost "http://localhost:8080" --version-info "$METALIBM_BUILD_VERSION" --disable-log
+ARG HOST="http://localhost:8080"
+ENV HOST=$HOST
+
+# CMD ["python3", "/home/MetalibmWebApp/myapp.py", "--port", "8080", "--localhost", "http://localhost:8080", "--version-info", $METALIBM_BUILD_VERSION]
+CMD python3 /home/MetalibmWebApp/myapp.py --port 8080 --localhost $HOST --version-info "$METALIBM_BUILD_VERSION" --disable-log
 
 FROM mwa-base-image AS mwa-release-image
 
